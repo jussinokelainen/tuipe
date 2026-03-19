@@ -1,0 +1,36 @@
+# Maintainer: Jussi Nokelainen <jussinoke@gmail.com>
+pkgname='tuipe-git'
+pkgver=r1.d68caa1
+pkgrel=1
+pkgdesc='TUI typing trainer'
+arch=('x86_64')
+url=""
+license=('MIT')
+depends=('glibc')
+makedepends=('git' 'cargo')
+source=("$pkgname::git+ssh://kyogre/home/jussi/git/tuipe")
+options=('!debug')
+sha256sums=('SKIP')
+
+pkgver() {
+	cd "$pkgname"
+	printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+	cd "$pkgname"
+	make build
+}
+
+package() {
+	cd "$pkgname"
+	ls target
+	install -Dm755 target/release/tuipe "$pkgdir"/usr/bin/tuipe
+
+	install -Dm644 words/english.json "$pkgdir"/usr/share/tuipe/words/english.json
+	install -Dm644 words/english_1k.json "$pkgdir"/usr/share/tuipe/words/english_1k.json
+	install -Dm644 words/english_5k.json "$pkgdir"/usr/share/tuipe/words/english_5k.json
+	install -Dm644 words/english_10k.json "$pkgdir"/usr/share/tuipe/words/english_10k.json
+	install -Dm644 words/english_25k.json "$pkgdir"/usr/share/tuipe/words/english_25k.json
+
+}

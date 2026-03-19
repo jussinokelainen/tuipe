@@ -1,0 +1,10 @@
+target/
+
+pkgbuild/arch/pkg/
+pkgbuild/arch/src/
+
+# Built packages
+pkgbuild/arch/*.pkg.tar.*
+
+# Cloned repositories
+pkgbuild/arch/tuipe-git/
