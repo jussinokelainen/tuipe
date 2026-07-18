@@ -119,7 +119,7 @@ impl App {
     }
 
     fn restart_test(&mut self) {
-        const COUNT: usize = 10;
+        const COUNT: usize = 15;
         self.words = get_words_as_vector(COUNT);
         self.input = vec!["".to_string()];
         self.input_mode = State::Typing;
@@ -137,6 +137,7 @@ impl App {
             if let Some(key) = event::read()?.as_key_press_event() {
                 match self.input_mode {
                     State::TestOver => match key.code {
+                        KeyCode::Tab => self.restart_test(),
                         KeyCode::Char('e') => {
                             self.input_mode = State::Typing;
                         }
@@ -191,6 +192,17 @@ impl App {
 
                     output_as_vec.push(Span::styled(
                         char_as_str.to_string(),
+                        Style::default().fg(color),
+                    ))
+                }
+                // If the word at current word_idx has more characters in input
+                // as in the real word, print them out here as red
+                if self.input[word_idx].len() > word.len() {
+                    let color = Color::Red;
+                    let extra_characters =
+                        &self.input[word_idx][word.len()..self.input[word_idx].len()];
+                    output_as_vec.push(Span::styled(
+                        extra_characters.to_string(),
                         Style::default().fg(color),
                     ))
                 }
