@@ -10,7 +10,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 /// App holds the state of the application
 pub struct Tuipe {
-    input_mode: State,
+    state: State,
 
     test_is_started: bool,
     test_start_time: u128,
@@ -28,14 +28,14 @@ pub struct Tuipe {
 }
 
 pub enum State {
-    TestOver,
+    EndScreen,
     Typing,
 }
 
 impl Tuipe {
     pub fn new() -> Self {
         Self {
-            input_mode: State::Typing,
+            state: State::Typing,
             test_is_started: false,
             test_start_time: 0,
             test_final_time: 0.0,
@@ -97,7 +97,7 @@ impl Tuipe {
                 self.input.truncate(new_length);
 
                 self.word_index -= 1;
-                self.character_index = self.input[self.word_index].len() - 1;
+                self.character_index = self.input[self.word_index].len();
                 if self.input_buffer[self.word_index] != 0 {}
             }
         } else {
@@ -121,7 +121,7 @@ impl Tuipe {
         self.words = get_words_as_vector(COUNT);
         self.input = vec!["".to_string()];
         self.input_buffer = vec![0];
-        self.input_mode = State::Typing;
+        self.state = State::Typing;
         self.character_index = 0;
         self.word_index = 0;
     }
@@ -132,11 +132,11 @@ impl Tuipe {
             terminal.draw(|frame| self.render(frame))?;
 
             if let Some(key) = event::read()?.as_key_press_event() {
-                match self.input_mode {
-                    State::TestOver => match key.code {
+                match self.state {
+                    State::EndScreen => match key.code {
                         KeyCode::Tab => self.restart_test(),
                         KeyCode::Char('e') => {
-                            self.input_mode = State::Typing;
+                            self.state = State::Typing;
                         }
                         KeyCode::Char('q') => {
                             return Ok(());
@@ -147,7 +147,7 @@ impl Tuipe {
                         KeyCode::Char(' ') => self.add_word(),
                         KeyCode::Char(to_insert) => self.enter_char(to_insert),
                         KeyCode::Backspace => self.delete_char(),
-                        KeyCode::Esc => self.input_mode = State::TestOver,
+                        KeyCode::Esc => self.state = State::EndScreen,
                         KeyCode::Tab => self.restart_test(),
                         _ => {}
                     },
@@ -157,13 +157,7 @@ impl Tuipe {
         }
     }
 
-    fn create_render_lines(&mut self, width: u16) -> (Vec<Line<'static>>, (u16, u16)) {
-        if self.words == self.input {
-            self.input_mode = State::TestOver;
-            self.get_test_time();
-            println!("\n{}", self.test_final_time / 1000.0)
-        }
-
+    fn create_test_lines(&mut self, width: u16) -> (Vec<Line<'static>>, (u16, u16)) {
         let mut lines: Vec<Line<'static>> = Vec::new();
         let mut current_line: Vec<Span<'static>> = Vec::new();
         let mut current_line_width: u16 = 0;
@@ -255,7 +249,7 @@ impl Tuipe {
         (lines, (cursor_row, cursor_col))
     }
 
-    fn render(&mut self, frame: &mut Frame) {
+    fn render_test(&mut self, frame: &mut Frame) {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
@@ -279,20 +273,62 @@ impl Tuipe {
         self.input_height = input_area.height;
 
         let text_width = input_area.width.saturating_sub(2); // minus left/right border
-        let (lines, (cursor_row, cursor_col)) = self.create_render_lines(text_width);
+        let (lines, (cursor_row, cursor_col)) = self.create_test_lines(text_width);
 
         let input = Paragraph::new(lines)
             .style(Style::default())
             .block(Block::bordered());
         frame.render_widget(input, input_area);
 
-        match self.input_mode {
-            State::TestOver => {}
-            #[expect(clippy::cast_possible_truncation)]
-            State::Typing => frame.set_cursor_position(Position::new(
-                input_area.x + cursor_col + 1,
-                input_area.y + cursor_row + 1,
-            )),
+        #[expect(clippy::cast_possible_truncation)]
+        frame.set_cursor_position(Position::new(
+            input_area.x + cursor_col + 1,
+            input_area.y + cursor_row + 1,
+        ));
+    }
+
+    fn render_endscreen(&mut self, frame: &mut Frame) {
+        let layout_vert = Layout::default()
+            .direction(Direction::Vertical)
+            .flex(Flex::Center)
+            .constraints([
+                Constraint::Percentage(40),
+                Constraint::Percentage(20),
+                Constraint::Percentage(40),
+            ])
+            .split(frame.area());
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .flex(Flex::Center)
+            .constraints([
+                Constraint::Percentage(40),
+                Constraint::Percentage(20),
+                Constraint::Percentage(40),
+            ])
+            .split(layout_vert[1]);
+        let input_area = layout_horizontal[1];
+        self.input_width = input_area.width;
+        self.input_height = input_area.height;
+
+        let mut lines: Vec<Line<'static>> = Vec::new();
+        lines.push(Line::from(Span::styled("Test over.", Style::default())));
+
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .block(Block::bordered());
+        frame.render_widget(input, input_area);
+    }
+
+    fn render(&mut self, frame: &mut Frame) {
+        if self.words == self.input {
+            self.state = State::EndScreen;
+            self.get_test_time();
+            println!("\n{}", self.test_final_time / 1000.0)
+        }
+
+        match self.state {
+            State::Typing => self.render_test(frame),
+            State::EndScreen => self.render_endscreen(frame),
         }
     }
 }
