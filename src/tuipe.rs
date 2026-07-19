@@ -1,30 +1,27 @@
 use crate::get_words_as_vector;
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
-use ratatui::layout::{Constraint, Direction, Flex, Layout, Position};
-use ratatui::style::{Color, Style};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Paragraph};
-use ratatui::{DefaultTerminal, Frame};
+use ratatui::DefaultTerminal;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// App holds the state of the application
 pub struct Tuipe {
-    input_mode: State,
+    pub input_mode: State,
 
-    test_is_started: bool,
-    test_start_time: u128,
-    test_final_time: f64,
+    pub test_is_started: bool,
+    pub test_start_time: u128,
+    pub test_final_time: f64,
 
-    cursor_index: usize,
-    character_index: usize,
-    word_index: usize,
+    pub cursor_index: usize,
+    pub character_index: usize,
+    pub word_index: usize,
 
-    input: Vec<String>,
-    words: Vec<String>,
+    pub input: Vec<String>,
+    pub input_buffer: Vec<u8>,
+    pub words: Vec<String>,
 }
 
-enum State {
+pub enum State {
     TestOver,
     Typing,
 }
@@ -40,17 +37,18 @@ impl Tuipe {
             character_index: 0,
             word_index: 0,
             input: vec!["".to_string()],
+            input_buffer: vec![0],
             words: Vec::new(),
         }
     }
 
-    fn move_cursor_left(&mut self) {
+    const fn move_cursor_left(&mut self) {
         if self.cursor_index > 0 {
             self.cursor_index -= 1
         }
     }
 
-    fn move_cursor_right(&mut self) {
+    const fn move_cursor_right(&mut self) {
         self.cursor_index += 1;
     }
 
@@ -62,7 +60,7 @@ impl Tuipe {
         self.test_start_time = start_time.as_millis()
     }
 
-    fn get_test_time(&mut self) {
+    pub fn get_test_time(&mut self) {
         // Calculate time
         let time_now = SystemTime::now();
         let end_time = time_now
@@ -82,9 +80,20 @@ impl Tuipe {
     }
 
     fn add_word(&mut self) {
+        let w_idx = self.word_index;
+        if self.words[w_idx].len() > self.input[w_idx].len() {
+            let buffer_count = (self.words[w_idx].len() - self.input[w_idx].len()) as u8;
+            self.input_buffer[w_idx] = buffer_count;
+            // Move the cursor forward the required amount of characters
+            for _ in 0..buffer_count {
+                self.move_cursor_right();
+            }
+        }
+
         self.character_index = 0;
         self.word_index += 1;
         self.input.push(String::from(""));
+        self.input_buffer.push(0);
         self.move_cursor_right();
     }
 
@@ -98,6 +107,12 @@ impl Tuipe {
 
                 self.word_index -= 1;
                 self.character_index = self.input[self.word_index].len() - 1;
+                if self.input_buffer[self.word_index] != 0 {
+                    // Move the cursor back the required amount of characters
+                    for _ in 1..self.input_buffer[self.word_index] {
+                        self.move_cursor_left();
+                    }
+                }
                 self.move_cursor_left();
                 // Move left one more time to account for the extra space between words
                 self.move_cursor_left();
@@ -127,6 +142,7 @@ impl Tuipe {
         const COUNT: usize = 15;
         self.words = get_words_as_vector(COUNT);
         self.input = vec!["".to_string()];
+        self.input_buffer = vec![0];
         self.input_mode = State::Typing;
         self.cursor_index = 0;
         self.character_index = 0;
@@ -164,101 +180,6 @@ impl Tuipe {
                     State::Typing => {}
                 }
             }
-        }
-    }
-
-    fn create_render_string(&mut self) -> Line<'_> {
-        let mut output_as_vec = Vec::new();
-        // See if the game is over, this is most likely not the right place
-        // for this
-        if self.words == self.input {
-            self.input_mode = State::TestOver;
-            self.get_test_time()
-        }
-
-        for (word_idx, word) in self.words.clone().into_iter().enumerate() {
-            if word_idx > self.word_index {
-                // The typer is not here yet, print the whole word as dark gray
-                let color = Color::DarkGray;
-                output_as_vec.push(Span::styled(word.clone(), Style::default().fg(color)))
-            } else {
-                // The typer has been at this word, check each character
-                for (char_idx, char) in word.chars().enumerate() {
-                    let mut color = Color::DarkGray;
-                    if self.word_index > word_idx || self.character_index >= char_idx {
-                        if self.input[word_idx].chars().nth(char_idx)
-                            == self.words[word_idx].chars().nth(char_idx)
-                        {
-                            color = Color::Reset
-                        } else {
-                            color = Color::Red
-                        }
-                    }
-
-                    let mut tmp = [0; 4];
-                    let char_as_str: &str = char.encode_utf8(&mut tmp);
-
-                    output_as_vec.push(Span::styled(
-                        char_as_str.to_string(),
-                        Style::default().fg(color),
-                    ))
-                }
-                // If the word at current word_idx has more characters in input
-                // as in the real word, print them out here as red
-                if self.input[word_idx].len() > word.len() {
-                    let color = Color::Red;
-                    let extra_characters =
-                        &self.input[word_idx][word.len()..self.input[word_idx].len()];
-                    output_as_vec.push(Span::styled(
-                        extra_characters.to_string(),
-                        Style::default().fg(color),
-                    ))
-                }
-            }
-            output_as_vec.push(Span::styled(" ", Style::default()))
-        }
-
-        Line::from(output_as_vec)
-    }
-
-    fn render(&mut self, frame: &mut Frame) {
-        let layout_vert = Layout::default()
-            .direction(Direction::Vertical)
-            .flex(Flex::Center)
-            .constraints([
-                Constraint::Percentage(25),
-                Constraint::Percentage(50),
-                Constraint::Percentage(25),
-            ])
-            .split(frame.area());
-        let layout_horizontal = Layout::default()
-            .direction(Direction::Horizontal)
-            .flex(Flex::Center)
-            .constraints([
-                Constraint::Percentage(25),
-                Constraint::Percentage(50),
-                Constraint::Percentage(25),
-            ])
-            .split(layout_vert[1]);
-        let input_area = layout_horizontal[1];
-        let input = Paragraph::new(self.create_render_string())
-            .style(Style::default())
-            .block(Block::bordered());
-        frame.render_widget(input, input_area);
-        match self.input_mode {
-            // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
-            State::TestOver => {}
-
-            // Make the cursor visible and ask ratatui to put it at the specified coordinates after
-            // rendering
-            #[expect(clippy::cast_possible_truncation)]
-            State::Typing => frame.set_cursor_position(Position::new(
-                // Draw the cursor at the current position in the input field.
-                // This position can be controlled via the left and right arrow key
-                input_area.x + self.cursor_index as u16 + 1,
-                // Move one line down, from the border to the input line
-                input_area.y + 1,
-            )),
         }
     }
 }
