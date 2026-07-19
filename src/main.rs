@@ -1,5 +1,4 @@
 mod tuipe;
-mod tuipe_render;
 use color_eyre::Result;
 use rand::rng;
 use rand::seq::IndexedRandom;
