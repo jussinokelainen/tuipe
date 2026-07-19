@@ -4,7 +4,7 @@ build:
 	@printf "\e[36m==> \e[0mCompiling...\n"
 	@cargo build --release
 
-run: build
+run:
 	@printf "\e[36m==> \e[0mStarting...\n"
 	@cargo run
 

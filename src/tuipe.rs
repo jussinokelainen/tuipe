@@ -15,18 +15,17 @@ pub struct Tuipe {
     test_is_started: bool,
     test_start_time: u128,
     test_final_time: f64,
-    test_final_time_calculated: bool,
-
-    character_index: usize,
-    word_index: usize,
+    test_final_time_is_set: bool,
+    test_wpm: f64,
 
     input: Vec<String>,
     input_buffer: Vec<u8>,
-    words: Vec<String>,
-
     input_width: u16,
     input_height: u16,
 
+    character_index: usize,
+    word_index: usize,
+    words: Vec<String>,
     words_count: usize,
 }
 
@@ -42,15 +41,18 @@ impl Tuipe {
             test_is_started: false,
             test_start_time: 0,
             test_final_time: 0.0,
-            test_final_time_calculated: false,
-            character_index: 0,
-            word_index: 0,
+            test_final_time_is_set: false,
+            test_wpm: 0.0,
+
             input: vec!["".to_string()],
             input_buffer: vec![0],
-            words: Vec::new(),
             input_width: 0,
             input_height: 0,
-            words_count: 10,
+
+            character_index: 0,
+            word_index: 0,
+            words: Vec::new(),
+            words_count: 50,
         }
     }
 
@@ -62,14 +64,28 @@ impl Tuipe {
         self.test_start_time = start_time.as_millis()
     }
 
-    fn get_test_time(&mut self) {
+    fn get_time_and_wpm(&mut self) {
         // Calculate time
         let time_now = SystemTime::now();
         let end_time = time_now
             .duration_since(UNIX_EPOCH)
             .expect("time should go forward");
         self.test_final_time = (end_time.as_millis() - self.test_start_time) as f64;
-        self.test_final_time_calculated = true
+        self.test_final_time_is_set = true;
+
+        // Calculate wpm
+        let mut correct_characters = 0;
+        for (idx, word) in self.words.clone().into_iter().enumerate() {
+            if self.input.len() > idx && self.input[idx] == word {
+                correct_characters += word.chars().count();
+            }
+        }
+        let correct_words = correct_characters as f64 / 5 as f64;
+
+        // times 60 to get words per minute instead of words per second,
+        // and divide self.test_final_time by 1000 to convert it from
+        // milliseconds to seconds
+        self.test_wpm = (correct_words * 60.0) / (self.test_final_time / 1000.0);
     }
 
     fn enter_char(&mut self, new_char: char) {
@@ -123,15 +139,20 @@ impl Tuipe {
     }
 
     fn restart_test(&mut self) {
-        self.words = get_words_as_vector(self.words_count);
+        self.state = State::Typing;
+
+        self.test_final_time_is_set = false;
+        self.test_is_started = false;
+        self.test_start_time = 0;
+        self.test_final_time = 0.0;
+        self.test_wpm = 0.0;
+
         self.input = vec!["".to_string()];
         self.input_buffer = vec![0];
-        self.state = State::Typing;
+
         self.character_index = 0;
         self.word_index = 0;
-        self.test_final_time_calculated = false;
-        self.test_is_started = false;
-        self.test_start_time = 0
+        self.words = get_words_as_vector(self.words_count);
     }
 
     fn check_is_test_done(&self) -> bool {
@@ -333,9 +354,13 @@ impl Tuipe {
 
         let time_str: String =
             "Your time: ".to_string() + &(self.test_final_time / 1000.0).to_string() + " seconds.";
+        // Multiplication and division by 100 to enable rounding wpm
+        let wpm_str: String =
+            "WPM: ".to_string() + &((self.test_wpm * 100.0).round() / 100.0).to_string();
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled("Test over.", Style::default())));
         lines.push(Line::from(Span::styled(time_str, Style::default())));
+        lines.push(Line::from(Span::styled(wpm_str, Style::default())));
 
         let input = Paragraph::new(lines)
             .style(Style::default())
@@ -345,8 +370,8 @@ impl Tuipe {
 
     fn render(&mut self, frame: &mut Frame) {
         // check if test done instead of self.words == self.input
-        if !self.test_final_time_calculated && self.check_is_test_done() {
-            self.get_test_time();
+        if !self.test_final_time_is_set && self.check_is_test_done() {
+            self.get_time_and_wpm();
             self.state = State::EndScreen;
         }
 
