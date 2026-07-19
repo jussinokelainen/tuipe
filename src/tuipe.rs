@@ -15,6 +15,7 @@ pub struct Tuipe {
     test_is_started: bool,
     test_start_time: u128,
     test_final_time: f64,
+    test_final_time_calculated: bool,
 
     character_index: usize,
     word_index: usize,
@@ -25,6 +26,8 @@ pub struct Tuipe {
 
     input_width: u16,
     input_height: u16,
+
+    words_count: usize,
 }
 
 pub enum State {
@@ -39,6 +42,7 @@ impl Tuipe {
             test_is_started: false,
             test_start_time: 0,
             test_final_time: 0.0,
+            test_final_time_calculated: false,
             character_index: 0,
             word_index: 0,
             input: vec!["".to_string()],
@@ -46,6 +50,7 @@ impl Tuipe {
             words: Vec::new(),
             input_width: 0,
             input_height: 0,
+            words_count: 10,
         }
     }
 
@@ -64,6 +69,7 @@ impl Tuipe {
             .duration_since(UNIX_EPOCH)
             .expect("time should go forward");
         self.test_final_time = (end_time.as_millis() - self.test_start_time) as f64;
+        self.test_final_time_calculated = true
     }
 
     fn enter_char(&mut self, new_char: char) {
@@ -117,13 +123,28 @@ impl Tuipe {
     }
 
     fn restart_test(&mut self) {
-        const COUNT: usize = 50;
-        self.words = get_words_as_vector(COUNT);
+        self.words = get_words_as_vector(self.words_count);
         self.input = vec!["".to_string()];
         self.input_buffer = vec![0];
         self.state = State::Typing;
         self.character_index = 0;
         self.word_index = 0;
+        self.test_final_time_calculated = false;
+        self.test_is_started = false;
+        self.test_start_time = 0
+    }
+
+    fn check_is_test_done(&self) -> bool {
+        if self.words.len() < self.input.len() {
+            return true;
+        }
+        if self.words.len() == self.input.len() {
+            if self.words[self.words_count - 1] == self.input[self.words_count - 1] {
+                return true;
+            }
+        }
+
+        false
     }
 
     pub fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
@@ -310,8 +331,11 @@ impl Tuipe {
         self.input_width = input_area.width;
         self.input_height = input_area.height;
 
+        let time_str: String =
+            "Your time: ".to_string() + &(self.test_final_time / 1000.0).to_string() + " seconds.";
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled("Test over.", Style::default())));
+        lines.push(Line::from(Span::styled(time_str, Style::default())));
 
         let input = Paragraph::new(lines)
             .style(Style::default())
@@ -320,10 +344,10 @@ impl Tuipe {
     }
 
     fn render(&mut self, frame: &mut Frame) {
-        if self.words == self.input {
-            self.state = State::EndScreen;
+        // check if test done instead of self.words == self.input
+        if !self.test_final_time_calculated && self.check_is_test_done() {
             self.get_test_time();
-            println!("\n{}", self.test_final_time / 1000.0)
+            self.state = State::EndScreen;
         }
 
         match self.state {
