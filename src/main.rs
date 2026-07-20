@@ -18,9 +18,15 @@ fn get_words_as_vector(count: usize) -> Vec<String> {
     let word_vector: Vec<String> = serde_json::from_str(&data).expect("Failed to parse JSON");
 
     let mut rng = rng();
-    for _ in 0..count {
+    let mut prev_word = "";
+    let mut i = 0;
+    while i < count {
         if let Some(new_word) = word_vector.choose(&mut rng) {
-            words.push(new_word.clone());
+            if new_word != prev_word {
+                words.push(new_word.clone());
+                prev_word = new_word;
+                i += 1;
+            }
         };
     }
 
