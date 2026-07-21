@@ -11,6 +11,10 @@ use structs::{FinalStats, State};
 pub use structs::{Language, MainMenu, TestType};
 
 fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String> {
+    const DATA_DIR: &str = match option_env!("DATADIR") {
+        Some(path) => path,
+        None => "/usr/share/tuipe",
+    };
     let mut words = Vec::new();
     let count = match test_type {
         TestType::Words10 => 10,
@@ -18,11 +22,11 @@ fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String>
         TestType::Words50 => 50,
     };
     let wordfile = match language {
-        Language::English => "/usr/share/tuipe/languages/english.json",
-        Language::English1k => "/usr/share/tuipe/languages/english_1k.json",
-        Language::English5k => "/usr/share/tuipe/languages/english_5k.json",
-        Language::English10k => "/usr/share/tuipe/languages/english_10k.json",
-        Language::English25k => "/usr/share/tuipe/languages/english_25k.json",
+        Language::English => DATA_DIR.to_string() + "/languages/english.json",
+        Language::English1k => DATA_DIR.to_string() + "/languages/english_1k.json",
+        Language::English5k => DATA_DIR.to_string() + "/languages/english_5k.json",
+        Language::English10k => DATA_DIR.to_string() + "/languages/english_10k.json",
+        Language::English25k => DATA_DIR.to_string() + "/languages/english_25k.json",
     };
 
     let data = fs::read_to_string(wordfile).expect("Failed to read file");

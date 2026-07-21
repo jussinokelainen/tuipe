@@ -1,6 +1,6 @@
 # Maintainer: Jussi Nokelainen <jussinoke@gmail.com>
 pkgname='tuipe-git'
-pkgver=r18.ef01f1c
+pkgver=r23.fde631f
 pkgrel=1
 pkgdesc='TUI typing trainer'
 arch=('x86_64')
@@ -8,7 +8,7 @@ url=""
 license=('GPL-3.0-only')
 depends=('glibc')
 makedepends=('git' 'cargo')
-source=("$pkgname::git+ssh://kyogre/home/jussi/git/tuipe")
+source=("$pkgname::git+https://github.com/jussinokelainen/tuipe.git")
 options=('!debug')
 sha256sums=('SKIP')
 
@@ -24,12 +24,5 @@ build() {
 
 package() {
 	cd "$pkgname"
-	ls target
-	install -Dm755 target/release/tuipe "$pkgdir"/usr/bin/tuipe
-
-	local files=(languages/*)
-	local file
-	for file in "${files[@]}"; do
-		install -Dm755 "$file" "$pkgdir"/usr/share/tuipe/"$file"
-	done
+	make install DESTDIR="$pkgdir"
 }
