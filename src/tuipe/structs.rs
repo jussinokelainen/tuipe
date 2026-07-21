@@ -19,3 +19,33 @@ impl FinalStats {
         }
     }
 }
+
+pub enum State {
+    StartScreen,
+    EndScreen,
+    Typing,
+}
+
+#[derive(Clone)]
+pub enum Language {
+    English,
+    English1k,
+    English5k,
+    English10k,
+    English25k,
+}
+
+impl Language {
+    pub const COUNT: usize = 5;
+
+    pub fn from_index(index: usize) -> Self {
+        match index {
+            0 => Language::English,
+            1 => Language::English1k,
+            2 => Language::English5k,
+            3 => Language::English10k,
+            4 => Language::English25k,
+            _ => Language::English,
+        }
+    }
+}

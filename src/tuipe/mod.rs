@@ -8,10 +8,13 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Paragraph};
 use ratatui::{DefaultTerminal, Frame};
 use std::time::{SystemTime, UNIX_EPOCH};
-use structs::FinalStats;
+pub use structs::Language;
+use structs::{FinalStats, State};
 
 pub struct Tuipe {
     state: State,
+    pub language: Language,
+    language_selection: usize,
 
     test_is_started: bool,
     test_start_time: u128,
@@ -27,15 +30,13 @@ pub struct Tuipe {
     words_count: usize,
 }
 
-pub enum State {
-    EndScreen,
-    Typing,
-}
-
 impl Tuipe {
     pub fn new() -> Self {
         Self {
-            state: State::Typing,
+            state: State::StartScreen,
+            language: Language::English,
+            language_selection: 0,
+
             test_is_started: false,
             test_start_time: 0,
 
@@ -167,7 +168,7 @@ impl Tuipe {
 
         self.character_index = 0;
         self.word_index = 0;
-        self.words = get_words_as_vector(self.words_count);
+        self.words = get_words_as_vector(self.language.clone());
     }
 
     fn check_is_test_done(&self) -> bool {
@@ -184,17 +185,34 @@ impl Tuipe {
     }
 
     pub fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+        // CLDL-ENTRY: title: useless call, priority: 12, tag: NONE
         self.restart_test();
+        self.state = State::StartScreen;
         loop {
             terminal.draw(|frame| self.render(frame))?;
 
             if let Some(key) = event::read()?.as_key_press_event() {
                 match self.state {
+                    State::StartScreen => match key.code {
+                        KeyCode::Char('k') => {
+                            self.language_selection =
+                                (self.language_selection + Language::COUNT - 1) % Language::COUNT;
+                        }
+                        KeyCode::Char('j') => {
+                            self.language_selection =
+                                (self.language_selection + 1) % Language::COUNT;
+                        }
+                        KeyCode::Enter => {
+                            self.language = Language::from_index(self.language_selection);
+                            self.restart_test();
+                        }
+                        KeyCode::Char('q') => {
+                            return Ok(());
+                        }
+                        _ => {}
+                    },
                     State::EndScreen => match key.code {
                         KeyCode::Tab => self.restart_test(),
-                        KeyCode::Char('e') => {
-                            self.state = State::Typing;
-                        }
                         KeyCode::Char('q') => {
                             return Ok(());
                         }
@@ -204,7 +222,7 @@ impl Tuipe {
                         KeyCode::Char(' ') => self.add_word(),
                         KeyCode::Char(to_insert) => self.enter_char(to_insert),
                         KeyCode::Backspace => self.delete_char(),
-                        KeyCode::Esc => self.state = State::EndScreen,
+                        KeyCode::Esc => self.state = State::StartScreen,
                         KeyCode::Tab => self.restart_test(),
                         _ => {}
                     },
@@ -406,6 +424,82 @@ impl Tuipe {
         frame.render_widget(input, input_area);
     }
 
+    fn render_start(&mut self, frame: &mut Frame) {
+        let layout_vert = Layout::default()
+            .direction(Direction::Vertical)
+            .flex(Flex::Center)
+            .constraints([
+                Constraint::Percentage(35),
+                Constraint::Percentage(30),
+                Constraint::Percentage(35),
+            ])
+            .split(frame.area());
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .flex(Flex::Center)
+            .constraints([
+                Constraint::Percentage(40),
+                Constraint::Percentage(20),
+                Constraint::Percentage(40),
+            ])
+            .split(layout_vert[1]);
+        let input_area = layout_horizontal[1];
+
+        let mut lines: Vec<Line<'static>> = Vec::new();
+        lines.push(Line::from(Span::styled(
+            "Tuipe, TUI typing test",
+            Style::default().fg(Color::Magenta),
+        )));
+        lines.push(Line::from(Span::styled("", Style::default())));
+
+        lines.push(Line::from(Span::styled(
+            "Available languages:",
+            Style::default().fg(Color::Green),
+        )));
+
+        let languages = [
+            "English",
+            "English 1k",
+            "English 5k",
+            "English 10k",
+            "English 25k",
+        ];
+        for (i, name) in languages.iter().enumerate() {
+            let style = if i == self.language_selection {
+                Style::default().fg(Color::Blue)
+            } else {
+                Style::default()
+            };
+            let label = if i == self.language_selection {
+                format!("> {name}")
+            } else {
+                format!("{name}")
+            };
+            lines.push(Line::from(Span::styled(label, style)));
+        }
+
+        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled(
+            "Move: j/k",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Start test: Enter",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Quit: q",
+            Style::default().fg(Color::DarkGray),
+        )));
+
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .centered()
+            .block(Block::bordered());
+        frame.render_widget(input, input_area);
+    }
+
     fn render(&mut self, frame: &mut Frame) {
         // check if test done instead of self.words == self.input
         if !self.stats.time_is_set && self.check_is_test_done() {
@@ -414,6 +508,7 @@ impl Tuipe {
         }
 
         match self.state {
+            State::StartScreen => self.render_start(frame),
             State::Typing => self.render_test(frame),
             State::EndScreen => self.render_endscreen(frame),
         }
