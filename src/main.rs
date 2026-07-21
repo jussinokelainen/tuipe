@@ -1,9 +1,10 @@
 mod tuipe;
+use crate::tuipe::Language;
+use crate::tuipe::TestType;
 use color_eyre::Result;
 use rand::rng;
 use rand::seq::IndexedRandom;
 use std::fs;
-use tuipe::Language;
 use tuipe::Tuipe;
 
 fn main() -> Result<()> {
@@ -11,9 +12,13 @@ fn main() -> Result<()> {
     ratatui::run(|terminal| Tuipe::new().run(terminal))
 }
 
-fn get_words_as_vector(language: tuipe::Language) -> Vec<String> {
+fn get_words_as_vector(language: &tuipe::Language, test_type: &tuipe::TestType) -> Vec<String> {
     let mut words = Vec::new();
-    let count = 50;
+    let count = match test_type {
+        TestType::Words10 => 10,
+        TestType::Words25 => 25,
+        TestType::Words50 => 50,
+    };
     let wordfile;
     match language {
         Language::English => wordfile = "/usr/share/tuipe/words/english.json",

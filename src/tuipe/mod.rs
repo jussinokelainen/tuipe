@@ -8,13 +8,17 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Paragraph};
 use ratatui::{DefaultTerminal, Frame};
 use std::time::{SystemTime, UNIX_EPOCH};
-pub use structs::Language;
 use structs::{FinalStats, State};
+pub use structs::{Language, MainMenu, TestType};
 
 pub struct Tuipe {
     state: State,
     pub language: Language,
+    pub test_type: TestType,
+
     language_selection: usize,
+    test_selection: usize,
+    mainmenu_selection: usize,
 
     test_is_started: bool,
     test_start_time: u128,
@@ -27,15 +31,17 @@ pub struct Tuipe {
     character_index: usize,
     word_index: usize,
     words: Vec<String>,
-    words_count: usize,
 }
 
 impl Tuipe {
     pub fn new() -> Self {
         Self {
-            state: State::StartScreen,
+            state: State::MainMenu,
             language: Language::English,
+            test_type: TestType::Words10,
             language_selection: 0,
+            test_selection: 0,
+            mainmenu_selection: 0,
 
             test_is_started: false,
             test_start_time: 0,
@@ -48,7 +54,6 @@ impl Tuipe {
             character_index: 0,
             word_index: 0,
             words: vec![String::new()],
-            words_count: 50,
         }
     }
 
@@ -168,7 +173,7 @@ impl Tuipe {
 
         self.character_index = 0;
         self.word_index = 0;
-        self.words = get_words_as_vector(self.language.clone());
+        self.words = get_words_as_vector(&self.language, &self.test_type);
     }
 
     fn check_is_test_done(&self) -> bool {
@@ -182,7 +187,7 @@ impl Tuipe {
                 return true;
             }
             if words_len == self.input.len() {
-                if self.words[self.words_count - 1] == self.input[self.words_count - 1] {
+                if self.words[words_len - 1] == self.input[words_len - 1] {
                     return true;
                 }
             }
@@ -197,7 +202,24 @@ impl Tuipe {
 
             if let Some(key) = event::read()?.as_key_press_event() {
                 match self.state {
-                    State::StartScreen => match key.code {
+                    State::TestTypeScreen => match key.code {
+                        KeyCode::Char('k') => {
+                            self.test_selection =
+                                (self.test_selection + TestType::COUNT - 1) % TestType::COUNT;
+                        }
+                        KeyCode::Char('j') => {
+                            self.test_selection = (self.test_selection + 1) % TestType::COUNT;
+                        }
+                        KeyCode::Enter => {
+                            self.test_type = TestType::from_index(self.test_selection);
+                            self.state = State::MainMenu
+                        }
+                        KeyCode::Char('q') => {
+                            return Ok(());
+                        }
+                        _ => {}
+                    },
+                    State::LanguageScreen => match key.code {
                         KeyCode::Char('k') => {
                             self.language_selection =
                                 (self.language_selection + Language::COUNT - 1) % Language::COUNT;
@@ -208,8 +230,27 @@ impl Tuipe {
                         }
                         KeyCode::Enter => {
                             self.language = Language::from_index(self.language_selection);
-                            self.restart_test();
+                            self.state = State::MainMenu
                         }
+                        KeyCode::Char('q') => {
+                            return Ok(());
+                        }
+                        _ => {}
+                    },
+                    State::MainMenu => match key.code {
+                        KeyCode::Char('k') => {
+                            self.mainmenu_selection =
+                                (self.mainmenu_selection + MainMenu::COUNT - 1) % MainMenu::COUNT;
+                        }
+                        KeyCode::Char('j') => {
+                            self.mainmenu_selection =
+                                (self.mainmenu_selection + 1) % MainMenu::COUNT;
+                        }
+                        KeyCode::Enter => match MainMenu::from_index(self.mainmenu_selection) {
+                            MainMenu::StartTest => self.restart_test(),
+                            MainMenu::SelectTestType => self.state = State::TestTypeScreen,
+                            MainMenu::SelectLanguage => self.state = State::LanguageScreen,
+                        },
                         KeyCode::Char('q') => {
                             return Ok(());
                         }
@@ -226,7 +267,7 @@ impl Tuipe {
                         KeyCode::Char(' ') => self.add_word(),
                         KeyCode::Char(to_insert) => self.enter_char(to_insert),
                         KeyCode::Backspace => self.delete_char(),
-                        KeyCode::Esc => self.state = State::StartScreen,
+                        KeyCode::Esc => self.state = State::MainMenu,
                         KeyCode::Tab => self.restart_test(),
                         _ => {}
                     },
@@ -432,7 +473,7 @@ impl Tuipe {
         frame.render_widget(input, input_area);
     }
 
-    fn render_start(&mut self, frame: &mut Frame) {
+    fn render_test_type_screen(&mut self, frame: &mut Frame) {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
@@ -455,11 +496,69 @@ impl Tuipe {
 
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
-            "Tuipe, TUI typing test",
-            Style::default().fg(Color::Magenta),
+            "Available tests:",
+            Style::default().fg(Color::Green),
         )));
-        lines.push(Line::from(Span::styled("", Style::default())));
 
+        let languages = ["10 Words", "25 Words", "50 Words"];
+        for (i, name) in languages.iter().enumerate() {
+            let style = if i == self.test_selection {
+                Style::default().fg(Color::Blue)
+            } else {
+                Style::default()
+            };
+            let label = if i == self.test_selection {
+                format!("> {name}")
+            } else {
+                format!("{name}")
+            };
+            lines.push(Line::from(Span::styled(label, style)));
+        }
+
+        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled(
+            "Move: j/k",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Select: Enter",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Quit: q",
+            Style::default().fg(Color::DarkGray),
+        )));
+
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .centered()
+            .block(Block::bordered());
+        frame.render_widget(input, input_area);
+    }
+
+    fn render_language_screen(&mut self, frame: &mut Frame) {
+        let layout_vert = Layout::default()
+            .direction(Direction::Vertical)
+            .flex(Flex::Center)
+            .constraints([
+                Constraint::Percentage(35),
+                Constraint::Percentage(30),
+                Constraint::Percentage(35),
+            ])
+            .split(frame.area());
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .flex(Flex::Center)
+            .constraints([
+                Constraint::Percentage(40),
+                Constraint::Percentage(20),
+                Constraint::Percentage(40),
+            ])
+            .split(layout_vert[1]);
+        let input_area = layout_horizontal[1];
+
+        let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
             "Available languages:",
             Style::default().fg(Color::Green),
@@ -493,7 +592,72 @@ impl Tuipe {
             Style::default().fg(Color::DarkGray),
         )));
         lines.push(Line::from(Span::styled(
-            "Start test: Enter",
+            "Select: Enter",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Quit: q",
+            Style::default().fg(Color::DarkGray),
+        )));
+
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .centered()
+            .block(Block::bordered());
+        frame.render_widget(input, input_area);
+    }
+
+    fn render_main_menu(&mut self, frame: &mut Frame) {
+        let layout_vert = Layout::default()
+            .direction(Direction::Vertical)
+            .flex(Flex::Center)
+            .constraints([
+                Constraint::Percentage(35),
+                Constraint::Percentage(30),
+                Constraint::Percentage(35),
+            ])
+            .split(frame.area());
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .flex(Flex::Center)
+            .constraints([
+                Constraint::Percentage(40),
+                Constraint::Percentage(20),
+                Constraint::Percentage(40),
+            ])
+            .split(layout_vert[1]);
+        let input_area = layout_horizontal[1];
+
+        let mut lines: Vec<Line<'static>> = Vec::new();
+        lines.push(Line::from(Span::styled(
+            "Tuipe, TUI typing test",
+            Style::default().fg(Color::Magenta),
+        )));
+        lines.push(Line::from(Span::styled("", Style::default())));
+
+        let options = ["Start test", "Select test type", "Select language"];
+        for (i, name) in options.iter().enumerate() {
+            let style = if i == self.mainmenu_selection {
+                Style::default().fg(Color::Blue)
+            } else {
+                Style::default()
+            };
+            let label = if i == self.mainmenu_selection {
+                format!("> {name}")
+            } else {
+                format!("{name}")
+            };
+            lines.push(Line::from(Span::styled(label, style)));
+        }
+
+        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled(
+            "Move: j/k",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Select: Enter",
             Style::default().fg(Color::DarkGray),
         )));
         lines.push(Line::from(Span::styled(
@@ -516,7 +680,9 @@ impl Tuipe {
         }
 
         match self.state {
-            State::StartScreen => self.render_start(frame),
+            State::MainMenu => self.render_main_menu(frame),
+            State::LanguageScreen => self.render_language_screen(frame),
+            State::TestTypeScreen => self.render_test_type_screen(frame),
             State::Typing => self.render_test(frame),
             State::EndScreen => self.render_endscreen(frame),
         }

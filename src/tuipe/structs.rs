@@ -21,12 +21,51 @@ impl FinalStats {
 }
 
 pub enum State {
-    StartScreen,
+    MainMenu,
+    LanguageScreen,
+    TestTypeScreen,
     EndScreen,
     Typing,
 }
 
-#[derive(Clone)]
+pub enum TestType {
+    Words10,
+    Words25,
+    Words50,
+}
+
+impl TestType {
+    pub const COUNT: usize = 3;
+
+    pub fn from_index(index: usize) -> Self {
+        match index {
+            0 => TestType::Words10,
+            1 => TestType::Words25,
+            2 => TestType::Words50,
+            _ => TestType::Words10,
+        }
+    }
+}
+
+pub enum MainMenu {
+    StartTest,
+    SelectTestType,
+    SelectLanguage,
+}
+
+impl MainMenu {
+    pub const COUNT: usize = 3;
+
+    pub fn from_index(index: usize) -> Self {
+        match index {
+            0 => MainMenu::StartTest,
+            1 => MainMenu::SelectTestType,
+            2 => MainMenu::SelectLanguage,
+            _ => MainMenu::StartTest,
+        }
+    }
+}
+
 pub enum Language {
     English,
     English1k,
