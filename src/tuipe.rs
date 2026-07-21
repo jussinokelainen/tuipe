@@ -14,9 +14,13 @@ pub struct Tuipe {
 
     test_is_started: bool,
     test_start_time: u128,
-    test_final_time: f64,
-    test_final_time_is_set: bool,
-    test_wpm: f64,
+
+    final_wpm: f64,
+    final_wpm_raw: f64,
+    final_time: f64,
+    final_time_is_set: bool,
+    final_typed_words: usize,
+    final_typed_characters: usize,
 
     input: Vec<String>,
     input_buffer: Vec<u8>,
@@ -40,9 +44,13 @@ impl Tuipe {
             state: State::Typing,
             test_is_started: false,
             test_start_time: 0,
-            test_final_time: 0.0,
-            test_final_time_is_set: false,
-            test_wpm: 0.0,
+
+            final_wpm: 0.0,
+            final_wpm_raw: 0.0,
+            final_time: 0.0,
+            final_time_is_set: false,
+            final_typed_words: 0,
+            final_typed_characters: 0,
 
             input: vec!["".to_string()],
             input_buffer: vec![0],
@@ -70,22 +78,43 @@ impl Tuipe {
         let end_time = time_now
             .duration_since(UNIX_EPOCH)
             .expect("time should go forward");
-        self.test_final_time = (end_time.as_millis() - self.test_start_time) as f64;
-        self.test_final_time_is_set = true;
+        self.final_time = (end_time.as_millis() - self.test_start_time) as f64;
+        self.final_time_is_set = true;
 
         // Calculate wpm
         let mut correct_characters = 0;
-        for (idx, word) in self.words.clone().into_iter().enumerate() {
-            if self.input.len() > idx && self.input[idx] == word {
-                correct_characters += word.chars().count();
+        let mut raw_extra_chars = 0;
+        let mut typed_words = 0;
+        for (idx, word) in self.input.clone().into_iter().enumerate() {
+            if self.words.len() > idx {
+                let input_word_len = word.chars().count();
+                let actual_word = self.words[idx].clone();
+                if actual_word == word {
+                    correct_characters += input_word_len;
+                } else {
+                    if input_word_len < actual_word.chars().count() {
+                        raw_extra_chars += input_word_len;
+                    } else {
+                        raw_extra_chars += actual_word.chars().count();
+                    }
+                }
+                typed_words += 1;
+                // Add one character to accont for the space after the word
+                correct_characters += 1;
             }
         }
+        // Remove one since there is no space after the last word
+        correct_characters -= 1;
         let correct_words = correct_characters as f64 / 5 as f64;
+        let raw_words = (correct_characters + raw_extra_chars) as f64 / 5 as f64;
 
         // times 60 to get words per minute instead of words per second,
         // and divide self.test_final_time by 1000 to convert it from
         // milliseconds to seconds
-        self.test_wpm = (correct_words * 60.0) / (self.test_final_time / 1000.0);
+        self.final_wpm = (correct_words * 60.0) / (self.final_time / 1000.0);
+        self.final_wpm_raw = (raw_words * 60.0) / (self.final_time / 1000.0);
+        self.final_typed_words = typed_words;
+        self.final_typed_characters = correct_characters;
     }
 
     fn enter_char(&mut self, new_char: char) {
@@ -141,11 +170,15 @@ impl Tuipe {
     fn restart_test(&mut self) {
         self.state = State::Typing;
 
-        self.test_final_time_is_set = false;
         self.test_is_started = false;
         self.test_start_time = 0;
-        self.test_final_time = 0.0;
-        self.test_wpm = 0.0;
+
+        self.final_wpm = 0.0;
+        self.final_wpm_raw = 0.0;
+        self.final_time = 0.0;
+        self.final_time_is_set = false;
+        self.final_typed_words = 0;
+        self.final_typed_characters = 0;
 
         self.input = vec!["".to_string()];
         self.input_buffer = vec![0];
@@ -353,14 +386,27 @@ impl Tuipe {
         self.input_height = input_area.height;
 
         let time_str: String =
-            "Your time: ".to_string() + &(self.test_final_time / 1000.0).to_string() + " seconds.";
+            "Your time: ".to_string() + &(self.final_time / 1000.0).to_string() + " seconds.";
         // Multiplication and division by 100 to enable rounding wpm
         let wpm_str: String =
-            "WPM: ".to_string() + &((self.test_wpm * 100.0).round() / 100.0).to_string();
+            "WPM: ".to_string() + &((self.final_wpm * 100.0).round() / 100.0).to_string();
+        let raw_wpm_str: String =
+            "raw WPM: ".to_string() + &((self.final_wpm_raw * 100.0).round() / 100.0).to_string();
+        let typed_char_str: String =
+            "Characters typed: ".to_string() + &(self.final_typed_characters).to_string();
+        let typed_word_str: String =
+            "Words typed: ".to_string() + &(self.final_typed_words).to_string();
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled("Test over.", Style::default())));
         lines.push(Line::from(Span::styled(time_str, Style::default())));
+        lines.push(Line::from(Span::styled("", Style::default())));
+
         lines.push(Line::from(Span::styled(wpm_str, Style::default())));
+        lines.push(Line::from(Span::styled(raw_wpm_str, Style::default())));
+        lines.push(Line::from(Span::styled("", Style::default())));
+
+        lines.push(Line::from(Span::styled(typed_char_str, Style::default())));
+        lines.push(Line::from(Span::styled(typed_word_str, Style::default())));
 
         let input = Paragraph::new(lines)
             .style(Style::default())
@@ -370,7 +416,7 @@ impl Tuipe {
 
     fn render(&mut self, frame: &mut Frame) {
         // check if test done instead of self.words == self.input
-        if !self.test_final_time_is_set && self.check_is_test_done() {
+        if !self.final_time_is_set && self.check_is_test_done() {
             self.get_time_and_wpm();
             self.state = State::EndScreen;
         }
