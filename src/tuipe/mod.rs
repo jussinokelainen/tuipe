@@ -73,10 +73,10 @@ impl Tuipe {
         let mut correct_characters = 0;
         let mut raw_extra_chars = 0;
         let mut typed_words = 0;
-        for (idx, word) in self.input.clone().into_iter().enumerate() {
+        for (idx, word) in self.input.iter().enumerate() {
             if self.words.len() > idx {
                 let input_word_len = word.chars().count();
-                let actual_word = self.words[idx].clone();
+                let actual_word = &self.words[idx];
                 if actual_word == word {
                     correct_characters += input_word_len;
                 } else {
@@ -232,35 +232,36 @@ impl Tuipe {
         }
     }
 
-    fn create_test_lines(&mut self, width: u16) -> (Vec<Line<'static>>, (u16, u16)) {
-        let mut lines: Vec<Line<'static>> = Vec::new();
-        let mut current_line: Vec<Span<'static>> = Vec::new();
+    fn create_test_lines(&mut self, width: u16) -> (Vec<Line<'_>>, (u16, u16)) {
+        let mut lines: Vec<Line<'_>> = Vec::new();
+        let mut current_line: Vec<Span<'_>> = Vec::new();
         let mut current_line_width: u16 = 0;
 
         let mut cursor_row: u16 = 0;
         let mut cursor_col: u16 = 0;
         let mut cursor_found = false;
 
-        for (word_idx, word) in self.words.clone().into_iter().enumerate() {
-            let mut word_spans: Vec<Span<'static>> = Vec::new();
+        for (word_idx, word) in self.words.iter().enumerate() {
+            let mut word_spans: Vec<Span<'_>> = Vec::new();
 
             if word_idx > self.word_index {
                 // The typer is not here yet, print the whole word as dark gray
                 let color = Color::DarkGray;
-                word_spans.push(Span::styled(word.clone(), Style::default().fg(color)));
+                word_spans.push(Span::styled(word, Style::default().fg(color)));
             } else {
                 // The typer has been at this word, check each character
                 for (char_idx, char) in word.chars().enumerate() {
-                    let mut color = Color::DarkGray;
-                    if self.word_index > word_idx || self.character_index >= char_idx {
-                        if self.input[word_idx].chars().nth(char_idx)
-                            == self.words[word_idx].chars().nth(char_idx)
-                        {
-                            color = Color::Reset
-                        } else {
-                            color = Color::Red
+                    let cur_input_char = self.input[word_idx].chars().nth(char_idx);
+                    let color = if self.word_index > word_idx || self.character_index > char_idx {
+                        match cur_input_char {
+                            None => Color::DarkGray,
+                            c if c == word.chars().nth(char_idx) => Color::Reset,
+                            _ => Color::Red,
                         }
-                    }
+                    } else {
+                        Color::DarkGray
+                    };
+
                     let mut tmp = [0; 4];
                     let char_as_str: &str = char.encode_utf8(&mut tmp);
                     word_spans.push(Span::styled(
