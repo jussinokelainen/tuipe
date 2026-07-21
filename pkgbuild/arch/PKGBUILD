@@ -1,6 +1,6 @@
 # Maintainer: Jussi Nokelainen <jussinoke@gmail.com>
 pkgname='tuipe-git'
-pkgver=r11.3384700
+pkgver=r14.604bebb
 pkgrel=1
 pkgdesc='TUI typing trainer'
 arch=('x86_64')

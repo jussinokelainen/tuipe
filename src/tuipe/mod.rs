@@ -42,12 +42,12 @@ impl Tuipe {
 
             stats: FinalStats::new(),
 
-            input: vec!["".to_string()],
+            input: vec![String::new()],
             input_buffer: vec![0],
 
             character_index: 0,
             word_index: 0,
-            words: Vec::new(),
+            words: vec![String::new()],
             words_count: 50,
         }
     }
@@ -163,7 +163,7 @@ impl Tuipe {
 
         self.stats = FinalStats::new();
 
-        self.input = vec!["".to_string()];
+        self.input = vec![String::new()];
         self.input_buffer = vec![0];
 
         self.character_index = 0;
@@ -172,12 +172,19 @@ impl Tuipe {
     }
 
     fn check_is_test_done(&self) -> bool {
-        if self.words.len() < self.input.len() {
-            return true;
-        }
-        if self.words.len() == self.input.len() {
-            if self.words[self.words_count - 1] == self.input[self.words_count - 1] {
+        let words_len = self.words.len();
+
+        // This check is needed so the program doesn't index the
+        // vectors on startup, since both vectors are initialized with
+        // the same length
+        if words_len > 1 {
+            if words_len < self.input.len() {
                 return true;
+            }
+            if words_len == self.input.len() {
+                if self.words[self.words_count - 1] == self.input[self.words_count - 1] {
+                    return true;
+                }
             }
         }
 
@@ -185,9 +192,6 @@ impl Tuipe {
     }
 
     pub fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
-        // CLDL-ENTRY: title: useless call, priority: 12, tag: NONE
-        self.restart_test();
-        self.state = State::StartScreen;
         loop {
             terminal.draw(|frame| self.render(frame))?;
 
@@ -248,12 +252,16 @@ impl Tuipe {
                 // The typer is not here yet, print the whole word as dark gray
                 let color = Color::DarkGray;
                 word_spans.push(Span::styled(word, Style::default().fg(color)));
+            } else if word_idx < self.word_index && &self.input[word_idx] == word {
+                // This word was typed correctly, no need to go character by character
+                let color = Color::Reset;
+                word_spans.push(Span::styled(word, Style::default().fg(color)));
             } else {
-                // The typer has been at this word, check each character
+                // Either the typer is at this word or it has typos, check each character
+                let cur_input_word = &self.input[word_idx];
                 for (char_idx, char) in word.chars().enumerate() {
-                    let cur_input_char = self.input[word_idx].chars().nth(char_idx);
                     let color = if self.word_index > word_idx || self.character_index > char_idx {
-                        match cur_input_char {
+                        match cur_input_word.chars().nth(char_idx) {
                             None => Color::DarkGray,
                             c if c == word.chars().nth(char_idx) => Color::Reset,
                             _ => Color::Red,
@@ -271,10 +279,9 @@ impl Tuipe {
                 }
                 // If the word at current word_idx has more characters in input
                 // as in the real word, print them out here as red
-                if self.input[word_idx].len() > word.len() {
+                if cur_input_word.len() > word.len() {
                     let color = Color::Red;
-                    let extra_characters =
-                        &self.input[word_idx][word.len()..self.input[word_idx].len()];
+                    let extra_characters = &cur_input_word[word.len()..cur_input_word.len()];
                     word_spans.push(Span::styled(
                         extra_characters.to_string(),
                         Style::default().fg(color),
