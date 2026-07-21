@@ -32,16 +32,43 @@ pub enum TestType {
     Words10,
     Words25,
     Words50,
+    Time10,
+    Time30,
+    Time60,
 }
 
 impl TestType {
-    pub const COUNT: usize = 3;
+    pub const COUNT: usize = 6;
+
+    pub fn word_count(&self) -> usize {
+        match &self {
+            TestType::Words10 => 10,
+            TestType::Words25 => 25,
+            TestType::Words50 => 50,
+            TestType::Time10 => 250,
+            TestType::Time30 => 250,
+            TestType::Time60 => 500,
+        }
+    }
+    pub fn is_timed(&self) -> (bool, usize) {
+        match &self {
+            TestType::Words10 => (false, 0),
+            TestType::Words25 => (false, 0),
+            TestType::Words50 => (false, 0),
+            TestType::Time10 => (true, 10),
+            TestType::Time30 => (true, 30),
+            TestType::Time60 => (true, 60),
+        }
+    }
 
     pub fn from_index(index: usize) -> Self {
         match index {
             0 => TestType::Words10,
             1 => TestType::Words25,
             2 => TestType::Words50,
+            3 => TestType::Time10,
+            4 => TestType::Time30,
+            5 => TestType::Time60,
             _ => TestType::Words10,
         }
     }

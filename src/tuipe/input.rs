@@ -1,24 +1,15 @@
-use crate::tuipe::{MainMenu, State};
+use crate::tuipe::{MainMenu, State, get_current_time_as_millis};
 use crate::{Language, TestType, Tuipe};
 use crossterm::event::KeyCode;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 impl Tuipe {
     fn set_start_time(&mut self) {
-        let time_now = SystemTime::now();
-        let start_time = time_now
-            .duration_since(UNIX_EPOCH)
-            .expect("time should go forward");
-        self.test_start_time = start_time.as_millis()
+        self.test_start_time = get_current_time_as_millis()
     }
 
     pub fn get_time_and_wpm(&mut self) {
         // Calculate time
-        let time_now = SystemTime::now();
-        let end_time = time_now
-            .duration_since(UNIX_EPOCH)
-            .expect("time should go forward");
-        self.stats.time = (end_time.as_millis() - self.test_start_time) as f64;
+        self.stats.time = (get_current_time_as_millis() - self.test_start_time) as f64;
         self.stats.time_is_set = true;
 
         // Calculate wpm

@@ -7,6 +7,7 @@ use rand::rng;
 use rand::seq::IndexedRandom;
 use ratatui::DefaultTerminal;
 use std::fs;
+use std::time::{SystemTime, UNIX_EPOCH};
 use structs::{FinalStats, State};
 pub use structs::{Language, MainMenu, TestType};
 
@@ -17,11 +18,7 @@ fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String>
         Some(path) => path,
         None => "/usr/share/tuipe",
     };
-    let count = match test_type {
-        TestType::Words10 => 10,
-        TestType::Words25 => 25,
-        TestType::Words50 => 50,
-    };
+    let count = TestType::word_count(&test_type);
     let wordfile = match language {
         Language::English => DATA_DIR.to_string() + "/languages/english.json",
         Language::English1k => DATA_DIR.to_string() + "/languages/english_1k.json",
@@ -50,6 +47,14 @@ fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String>
     words
 }
 
+fn get_current_time_as_millis() -> u128 {
+    let time_now = SystemTime::now();
+    let current_time = time_now
+        .duration_since(UNIX_EPOCH)
+        .expect("time should go forward");
+    current_time.as_millis()
+}
+
 pub struct Tuipe {
     state: State,
     should_exit: bool,
@@ -62,6 +67,8 @@ pub struct Tuipe {
 
     test_is_started: bool,
     test_start_time: u128,
+    test_is_timed: bool,
+    test_time_limit: usize,
 
     stats: FinalStats,
 
@@ -80,12 +87,15 @@ impl Tuipe {
             should_exit: false,
             language: Language::English,
             test_type: TestType::Words10,
+
             language_selection: 0,
             test_selection: 0,
             mainmenu_selection: 0,
 
             test_is_started: false,
             test_start_time: 0,
+            test_is_timed: false,
+            test_time_limit: 0,
 
             stats: FinalStats::new(),
 
@@ -101,6 +111,7 @@ impl Tuipe {
     fn restart_test(&mut self) {
         self.state = State::Typing;
 
+        (self.test_is_timed, self.test_time_limit) = TestType::is_timed(&self.test_type);
         self.test_is_started = false;
         self.test_start_time = 0;
 
@@ -128,6 +139,14 @@ impl Tuipe {
                 if self.words[words_len - 1] == self.input[words_len - 1] {
                     return true;
                 }
+            }
+        }
+
+        if self.test_is_timed && self.test_is_started {
+            let elapsed_test_time = (get_current_time_as_millis() - self.test_start_time) as f64;
+            // Divide elapsed time by 1000 to convert it from milliseconds to seconds
+            if (elapsed_test_time / 1000.0) >= self.test_time_limit as f64 {
+                return true;
             }
         }
 

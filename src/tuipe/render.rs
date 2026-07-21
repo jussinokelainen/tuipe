@@ -66,7 +66,10 @@ impl Tuipe {
 
             // Word-wrap: if this word + trailing space won't fit, break to a new line first
             if current_line_width > 0 && current_line_width + word_width + 1 > width {
-                lines.push(Line::from(std::mem::take(&mut current_line)));
+                let new_line = std::mem::take(&mut current_line);
+                if cursor_found {
+                    lines.push(Line::from(new_line));
+                }
                 current_line_width = 0;
             }
 
@@ -125,7 +128,7 @@ impl Tuipe {
             ])
             .split(layout_vert[1]);
         let input_area = layout_horizontal[1];
-        let text_width = input_area.width.saturating_sub(2); // minus left/right border
+        let text_width = input_area.width.saturating_sub(2);
         let (lines, (cursor_row, cursor_col)) = self.create_test_lines(text_width);
 
         // Calculate cursor offset for centered text
@@ -233,7 +236,14 @@ impl Tuipe {
         )));
         lines.push(Line::from(Span::styled("", Style::default())));
 
-        let languages = ["10 Words", "25 Words", "50 Words"];
+        let languages = [
+            "10 Words",
+            "25 Words",
+            "50 Words",
+            "10 Seconds",
+            "30 Seconds",
+            "60 Seconds",
+        ];
         for (i, name) in languages.iter().enumerate() {
             let style = if i == self.test_selection {
                 Style::default().fg(Color::Blue)
@@ -380,6 +390,9 @@ impl Tuipe {
             TestType::Words10 => "10 Words",
             TestType::Words25 => "25 Words",
             TestType::Words50 => "50 Words",
+            TestType::Time10 => "10 Seconds",
+            TestType::Time30 => "30 Seconds",
+            TestType::Time60 => "60 Seconds",
         };
         lines.push(Line::from(Span::styled(
             format!("Current Test type: {ttype}"),
