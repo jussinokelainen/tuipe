@@ -1,12 +1,48 @@
 mod input;
 mod render;
 mod structs;
-use crate::get_words_as_vector;
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
+use rand::rng;
+use rand::seq::IndexedRandom;
 use ratatui::DefaultTerminal;
+use std::fs;
 use structs::{FinalStats, State};
 pub use structs::{Language, MainMenu, TestType};
+
+fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String> {
+    let mut words = Vec::new();
+    let count = match test_type {
+        TestType::Words10 => 10,
+        TestType::Words25 => 25,
+        TestType::Words50 => 50,
+    };
+    let wordfile = match language {
+        Language::English => "/usr/share/tuipe/languages/english.json",
+        Language::English1k => "/usr/share/tuipe/languages/english_1k.json",
+        Language::English5k => "/usr/share/tuipe/languages/english_5k.json",
+        Language::English10k => "/usr/share/tuipe/languages/english_10k.json",
+        Language::English25k => "/usr/share/tuipe/languages/english_25k.json",
+    };
+
+    let data = fs::read_to_string(wordfile).expect("Failed to read file");
+    let word_vector: Vec<String> = serde_json::from_str(&data).expect("Failed to parse JSON");
+
+    let mut rng = rng();
+    let mut prev_word = "";
+    let mut i = 0;
+    while i < count {
+        if let Some(new_word) = word_vector.choose(&mut rng) {
+            if new_word != prev_word {
+                words.push(new_word.clone().to_lowercase());
+                prev_word = new_word;
+                i += 1;
+            }
+        };
+    }
+
+    words
+}
 
 pub struct Tuipe {
     state: State,
