@@ -2,7 +2,7 @@ mod input;
 mod render;
 mod structs;
 use color_eyre::Result;
-use crossterm::event::{self, KeyCode, KeyEventKind};
+use crossterm::event::{self, KeyEventKind};
 use rand::rng;
 use rand::seq::IndexedRandom;
 use ratatui::DefaultTerminal;
@@ -11,11 +11,12 @@ use structs::{FinalStats, State};
 pub use structs::{Language, MainMenu, TestType};
 
 fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String> {
+    // Get directory for word files at compile time from the DATADIR argument,
+    // or use /usr/share/tuipe as default fallback
     const DATA_DIR: &str = match option_env!("DATADIR") {
         Some(path) => path,
         None => "/usr/share/tuipe",
     };
-    let mut words = Vec::new();
     let count = match test_type {
         TestType::Words10 => 10,
         TestType::Words25 => 25,
@@ -32,6 +33,7 @@ fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String>
     let data = fs::read_to_string(wordfile).expect("Failed to read file");
     let word_vector: Vec<String> = serde_json::from_str(&data).expect("Failed to parse JSON");
 
+    let mut words = Vec::new();
     let mut rng = rng();
     let mut prev_word = "";
     let mut i = 0;
@@ -50,6 +52,7 @@ fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String>
 
 pub struct Tuipe {
     state: State,
+    should_exit: bool,
     pub language: Language,
     pub test_type: TestType,
 
@@ -74,6 +77,7 @@ impl Tuipe {
     pub fn new() -> Self {
         Self {
             state: State::MainMenu,
+            should_exit: false,
             language: Language::English,
             test_type: TestType::Words10,
             language_selection: 0,
@@ -136,84 +140,18 @@ impl Tuipe {
 
             if let Some(key) = event::read()?.as_key_press_event() {
                 match self.state {
-                    State::TestTypeScreen => match key.code {
-                        KeyCode::Char('k') => {
-                            self.test_selection =
-                                (self.test_selection + TestType::COUNT - 1) % TestType::COUNT;
-                        }
-                        KeyCode::Char('j') => {
-                            self.test_selection = (self.test_selection + 1) % TestType::COUNT;
-                        }
-                        KeyCode::Enter => {
-                            self.test_type = TestType::from_index(self.test_selection);
-                            self.state = State::MainMenu;
-                            self.test_selection = 0
-                        }
-                        KeyCode::Char('q') => {
-                            return Ok(());
-                        }
-                        KeyCode::Esc => self.state = State::MainMenu,
-                        _ => {}
-                    },
-                    State::LanguageScreen => match key.code {
-                        KeyCode::Char('k') => {
-                            self.language_selection =
-                                (self.language_selection + Language::COUNT - 1) % Language::COUNT;
-                        }
-                        KeyCode::Char('j') => {
-                            self.language_selection =
-                                (self.language_selection + 1) % Language::COUNT;
-                        }
-                        KeyCode::Enter => {
-                            self.language = Language::from_index(self.language_selection);
-                            self.state = State::MainMenu;
-                            self.language_selection = 0
-                        }
-                        KeyCode::Char('q') => {
-                            return Ok(());
-                        }
-                        KeyCode::Esc => self.state = State::MainMenu,
-                        _ => {}
-                    },
-                    State::MainMenu => match key.code {
-                        KeyCode::Char('k') => {
-                            self.mainmenu_selection =
-                                (self.mainmenu_selection + MainMenu::COUNT - 1) % MainMenu::COUNT;
-                        }
-                        KeyCode::Char('j') => {
-                            self.mainmenu_selection =
-                                (self.mainmenu_selection + 1) % MainMenu::COUNT;
-                        }
-                        KeyCode::Enter => {
-                            match MainMenu::from_index(self.mainmenu_selection) {
-                                MainMenu::StartTest => self.restart_test(),
-                                MainMenu::SelectTestType => self.state = State::TestTypeScreen,
-                                MainMenu::SelectLanguage => self.state = State::LanguageScreen,
-                            }
-                            self.mainmenu_selection = 0;
-                        }
-                        KeyCode::Char('q') => {
-                            return Ok(());
-                        }
-                        _ => {}
-                    },
-                    State::EndScreen => match key.code {
-                        KeyCode::Tab => self.restart_test(),
-                        KeyCode::Char('q') => {
-                            return Ok(());
-                        }
-                        _ => {}
-                    },
-                    State::Typing if key.kind == KeyEventKind::Press => match key.code {
-                        KeyCode::Char(' ') => self.add_word(),
-                        KeyCode::Char(to_insert) => self.enter_char(to_insert),
-                        KeyCode::Backspace => self.delete_char(),
-                        KeyCode::Esc => self.state = State::MainMenu,
-                        KeyCode::Tab => self.restart_test(),
-                        _ => {}
-                    },
+                    State::TestTypeScreen => self.test_type_screen_input(key.code),
+                    State::LanguageScreen => self.language_screen_input(key.code),
+                    State::MainMenu => self.main_menu_input(key.code),
+                    State::EndScreen => self.end_screen_input(key.code),
+                    State::Typing if key.kind == KeyEventKind::Press => {
+                        self.typing_test_input(key.code)
+                    }
                     State::Typing => {}
                 }
+            }
+            if self.should_exit {
+                return Ok(());
             }
         }
     }
