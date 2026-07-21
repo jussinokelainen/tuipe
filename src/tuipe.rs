@@ -346,19 +346,26 @@ impl Tuipe {
         let input_area = layout_horizontal[1];
         self.input_width = input_area.width;
         self.input_height = input_area.height;
-
         let text_width = input_area.width.saturating_sub(2); // minus left/right border
         let (lines, (cursor_row, cursor_col)) = self.create_test_lines(text_width);
 
+        // Calculate cursor offset for centered text
+        #[expect(clippy::cast_possible_truncation)]
+        let cursor_line_width = lines
+            .get(cursor_row as usize)
+            .map_or(0, ratatui::text::Line::width) as u16;
+        let center_offset = (text_width / 2).saturating_sub(cursor_line_width / 2);
+
         let input = Paragraph::new(lines)
             .style(Style::default())
+            .centered()
             .block(Block::bordered());
         frame.render_widget(input, input_area);
 
         #[expect(clippy::cast_possible_truncation)]
         frame.set_cursor_position(Position::new(
-            input_area.x + cursor_col + 1,
-            input_area.y + cursor_row + 1,
+            input_area.x + 1 + center_offset + cursor_col,
+            input_area.y + 1 + cursor_row,
         ));
     }
 
@@ -397,11 +404,17 @@ impl Tuipe {
         let typed_word_str: String =
             "Words typed: ".to_string() + &(self.final_typed_words).to_string();
         let mut lines: Vec<Line<'static>> = Vec::new();
-        lines.push(Line::from(Span::styled("Test over.", Style::default())));
+        lines.push(Line::from(Span::styled(
+            "Test over.",
+            Style::default().fg(Color::Green),
+        )));
         lines.push(Line::from(Span::styled(time_str, Style::default())));
         lines.push(Line::from(Span::styled("", Style::default())));
 
-        lines.push(Line::from(Span::styled(wpm_str, Style::default())));
+        lines.push(Line::from(Span::styled(
+            wpm_str,
+            Style::default().fg(Color::Blue),
+        )));
         lines.push(Line::from(Span::styled(raw_wpm_str, Style::default())));
         lines.push(Line::from(Span::styled("", Style::default())));
 
@@ -410,6 +423,7 @@ impl Tuipe {
 
         let input = Paragraph::new(lines)
             .style(Style::default())
+            .centered()
             .block(Block::bordered());
         frame.render_widget(input, input_area);
     }
