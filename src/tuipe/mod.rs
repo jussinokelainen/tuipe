@@ -212,11 +212,13 @@ impl Tuipe {
                         }
                         KeyCode::Enter => {
                             self.test_type = TestType::from_index(self.test_selection);
-                            self.state = State::MainMenu
+                            self.state = State::MainMenu;
+                            self.test_selection = 0
                         }
                         KeyCode::Char('q') => {
                             return Ok(());
                         }
+                        KeyCode::Esc => self.state = State::MainMenu,
                         _ => {}
                     },
                     State::LanguageScreen => match key.code {
@@ -230,11 +232,13 @@ impl Tuipe {
                         }
                         KeyCode::Enter => {
                             self.language = Language::from_index(self.language_selection);
-                            self.state = State::MainMenu
+                            self.state = State::MainMenu;
+                            self.language_selection = 0
                         }
                         KeyCode::Char('q') => {
                             return Ok(());
                         }
+                        KeyCode::Esc => self.state = State::MainMenu,
                         _ => {}
                     },
                     State::MainMenu => match key.code {
@@ -246,11 +250,14 @@ impl Tuipe {
                             self.mainmenu_selection =
                                 (self.mainmenu_selection + 1) % MainMenu::COUNT;
                         }
-                        KeyCode::Enter => match MainMenu::from_index(self.mainmenu_selection) {
-                            MainMenu::StartTest => self.restart_test(),
-                            MainMenu::SelectTestType => self.state = State::TestTypeScreen,
-                            MainMenu::SelectLanguage => self.state = State::LanguageScreen,
-                        },
+                        KeyCode::Enter => {
+                            match MainMenu::from_index(self.mainmenu_selection) {
+                                MainMenu::StartTest => self.restart_test(),
+                                MainMenu::SelectTestType => self.state = State::TestTypeScreen,
+                                MainMenu::SelectLanguage => self.state = State::LanguageScreen,
+                            }
+                            self.mainmenu_selection = 0;
+                        }
                         KeyCode::Char('q') => {
                             return Ok(());
                         }
@@ -499,6 +506,7 @@ impl Tuipe {
             "Available tests:",
             Style::default().fg(Color::Green),
         )));
+        lines.push(Line::from(Span::styled("", Style::default())));
 
         let languages = ["10 Words", "25 Words", "50 Words"];
         for (i, name) in languages.iter().enumerate() {
@@ -523,6 +531,10 @@ impl Tuipe {
         )));
         lines.push(Line::from(Span::styled(
             "Select: Enter",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Back: Esc",
             Style::default().fg(Color::DarkGray),
         )));
         lines.push(Line::from(Span::styled(
@@ -563,6 +575,7 @@ impl Tuipe {
             "Available languages:",
             Style::default().fg(Color::Green),
         )));
+        lines.push(Line::from(Span::styled("", Style::default())));
 
         let languages = [
             "English",
@@ -593,6 +606,10 @@ impl Tuipe {
         )));
         lines.push(Line::from(Span::styled(
             "Select: Enter",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Back: Esc",
             Style::default().fg(Color::DarkGray),
         )));
         lines.push(Line::from(Span::styled(
@@ -632,6 +649,27 @@ impl Tuipe {
         lines.push(Line::from(Span::styled(
             "Tuipe, TUI typing test",
             Style::default().fg(Color::Magenta),
+        )));
+        lines.push(Line::from(Span::styled("", Style::default())));
+        let ttype = match self.test_type {
+            TestType::Words10 => "10 Words",
+            TestType::Words25 => "25 Words",
+            TestType::Words50 => "50 Words",
+        };
+        lines.push(Line::from(Span::styled(
+            format!("Current Test type: {ttype}"),
+            Style::default().fg(Color::LightCyan),
+        )));
+        let lang = match self.language {
+            Language::English => "English",
+            Language::English1k => "English 1k",
+            Language::English5k => "English 5k",
+            Language::English10k => "English 10k",
+            Language::English25k => "English 25k",
+        };
+        lines.push(Line::from(Span::styled(
+            format!("Current Language: {lang}"),
+            Style::default().fg(Color::LightCyan),
         )));
         lines.push(Line::from(Span::styled("", Style::default())));
 
