@@ -1,3 +1,4 @@
+mod structs;
 use crate::get_words_as_vector;
 use color_eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
@@ -7,25 +8,18 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Paragraph};
 use ratatui::{DefaultTerminal, Frame};
 use std::time::{SystemTime, UNIX_EPOCH};
+use structs::FinalStats;
 
-/// App holds the state of the application
 pub struct Tuipe {
     state: State,
 
     test_is_started: bool,
     test_start_time: u128,
 
-    final_wpm: f64,
-    final_wpm_raw: f64,
-    final_time: f64,
-    final_time_is_set: bool,
-    final_typed_words: usize,
-    final_typed_characters: usize,
+    stats: FinalStats,
 
     input: Vec<String>,
     input_buffer: Vec<u8>,
-    input_width: u16,
-    input_height: u16,
 
     character_index: usize,
     word_index: usize,
@@ -45,17 +39,10 @@ impl Tuipe {
             test_is_started: false,
             test_start_time: 0,
 
-            final_wpm: 0.0,
-            final_wpm_raw: 0.0,
-            final_time: 0.0,
-            final_time_is_set: false,
-            final_typed_words: 0,
-            final_typed_characters: 0,
+            stats: FinalStats::new(),
 
             input: vec!["".to_string()],
             input_buffer: vec![0],
-            input_width: 0,
-            input_height: 0,
 
             character_index: 0,
             word_index: 0,
@@ -78,8 +65,8 @@ impl Tuipe {
         let end_time = time_now
             .duration_since(UNIX_EPOCH)
             .expect("time should go forward");
-        self.final_time = (end_time.as_millis() - self.test_start_time) as f64;
-        self.final_time_is_set = true;
+        self.stats.time = (end_time.as_millis() - self.test_start_time) as f64;
+        self.stats.time_is_set = true;
 
         // Calculate wpm
         let mut correct_characters = 0;
@@ -111,10 +98,10 @@ impl Tuipe {
         // times 60 to get words per minute instead of words per second,
         // and divide self.test_final_time by 1000 to convert it from
         // milliseconds to seconds
-        self.final_wpm = (correct_words * 60.0) / (self.final_time / 1000.0);
-        self.final_wpm_raw = (raw_words * 60.0) / (self.final_time / 1000.0);
-        self.final_typed_words = typed_words;
-        self.final_typed_characters = correct_characters;
+        self.stats.wpm = (correct_words * 60.0) / (self.stats.time / 1000.0);
+        self.stats.wpm_raw = (raw_words * 60.0) / (self.stats.time / 1000.0);
+        self.stats.typed_words = typed_words;
+        self.stats.typed_characters = correct_characters;
     }
 
     fn enter_char(&mut self, new_char: char) {
@@ -173,12 +160,7 @@ impl Tuipe {
         self.test_is_started = false;
         self.test_start_time = 0;
 
-        self.final_wpm = 0.0;
-        self.final_wpm_raw = 0.0;
-        self.final_time = 0.0;
-        self.final_time_is_set = false;
-        self.final_typed_words = 0;
-        self.final_typed_characters = 0;
+        self.stats = FinalStats::new();
 
         self.input = vec!["".to_string()];
         self.input_buffer = vec![0];
@@ -344,8 +326,6 @@ impl Tuipe {
             ])
             .split(layout_vert[1]);
         let input_area = layout_horizontal[1];
-        self.input_width = input_area.width;
-        self.input_height = input_area.height;
         let text_width = input_area.width.saturating_sub(2); // minus left/right border
         let (lines, (cursor_row, cursor_col)) = self.create_test_lines(text_width);
 
@@ -389,20 +369,18 @@ impl Tuipe {
             ])
             .split(layout_vert[1]);
         let input_area = layout_horizontal[1];
-        self.input_width = input_area.width;
-        self.input_height = input_area.height;
 
         let time_str: String =
-            "Your time: ".to_string() + &(self.final_time / 1000.0).to_string() + " seconds.";
+            "Your time: ".to_string() + &(self.stats.time / 1000.0).to_string() + " seconds.";
         // Multiplication and division by 100 to enable rounding wpm
         let wpm_str: String =
-            "WPM: ".to_string() + &((self.final_wpm * 100.0).round() / 100.0).to_string();
+            "WPM: ".to_string() + &((self.stats.wpm * 100.0).round() / 100.0).to_string();
         let raw_wpm_str: String =
-            "raw WPM: ".to_string() + &((self.final_wpm_raw * 100.0).round() / 100.0).to_string();
+            "raw WPM: ".to_string() + &((self.stats.wpm_raw * 100.0).round() / 100.0).to_string();
         let typed_char_str: String =
-            "Characters typed: ".to_string() + &(self.final_typed_characters).to_string();
+            "Characters typed: ".to_string() + &(self.stats.typed_characters).to_string();
         let typed_word_str: String =
-            "Words typed: ".to_string() + &(self.final_typed_words).to_string();
+            "Words typed: ".to_string() + &(self.stats.typed_words).to_string();
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
             "Test over.",
@@ -430,7 +408,7 @@ impl Tuipe {
 
     fn render(&mut self, frame: &mut Frame) {
         // check if test done instead of self.words == self.input
-        if !self.final_time_is_set && self.check_is_test_done() {
+        if !self.stats.time_is_set && self.check_is_test_done() {
             self.get_time_and_wpm();
             self.state = State::EndScreen;
         }
