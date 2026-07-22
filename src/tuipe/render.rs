@@ -169,7 +169,7 @@ impl Tuipe {
             "Words typed: ".to_string() + &(self.stats.typed_words).to_string();
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
-            format!("Test done: {}", TestType::as_string(&self.test_type)),
+            format!("Test done: {}", TestType::as_string(&self.test.ttype)),
             Style::default().fg(Color::Green),
         )));
         lines.push(Line::from(Span::styled(time_str, Style::default())));
@@ -405,7 +405,7 @@ impl Tuipe {
             Style::default().fg(Color::Magenta),
         )));
         lines.push(Line::from(Span::styled("", Style::default())));
-        let ttype = TestType::as_string(&self.test_type);
+        let ttype = TestType::as_string(&self.test.ttype);
         lines.push(Line::from(Span::styled(
             format!("Current Test type: {ttype}"),
             Style::default().fg(Color::LightCyan),

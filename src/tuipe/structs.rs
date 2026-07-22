@@ -1,3 +1,25 @@
+pub struct Test {
+    pub ttype: TestType,
+    pub difficulty: Difficulty,
+    pub is_started: bool,
+    pub start_time: u128,
+    pub is_timed: bool,
+    pub time_limit: usize,
+}
+
+impl Test {
+    pub fn new() -> Self {
+        Self {
+            ttype: TestType::Words10,
+            difficulty: Difficulty::Expert,
+            is_started: false,
+            start_time: 0,
+            is_timed: false,
+            time_limit: 0,
+        }
+    }
+}
+
 pub struct FinalStats {
     pub wpm: f64,
     pub wpm_raw: f64,

@@ -4,12 +4,12 @@ use crossterm::event::KeyCode;
 
 impl Tuipe {
     fn set_start_time(&mut self) {
-        self.test_start_time = get_current_time_as_millis()
+        self.test.start_time = get_current_time_as_millis()
     }
 
     pub fn get_time_and_wpm(&mut self) {
         // Calculate time
-        self.stats.time = (get_current_time_as_millis() - self.test_start_time) as f64;
+        self.stats.time = (get_current_time_as_millis() - self.test.start_time) as f64;
         self.stats.time_is_set = true;
 
         // Calculate wpm
@@ -49,14 +49,14 @@ impl Tuipe {
     }
 
     fn enter_char(&mut self, new_char: char) {
-        if !self.test_is_started {
-            self.test_is_started = true;
+        if !self.test.is_started {
+            self.test.is_started = true;
             self.set_start_time()
         }
         self.input[self.word_index] += new_char.to_string().as_str();
 
         // Check that the character is correct if on master difficulty
-        if self.test_difficulty == Difficulty::Master
+        if self.test.difficulty == Difficulty::Master
             && self.input[self.word_index]
                 .chars()
                 .nth(self.character_index)
@@ -78,7 +78,7 @@ impl Tuipe {
         }
 
         // Check that the word is correct if on Expert difficulty
-        if self.test_difficulty == Difficulty::Expert && self.words[w_idx] != self.input[w_idx] {
+        if self.test.difficulty == Difficulty::Expert && self.words[w_idx] != self.input[w_idx] {
             self.state = State::EndScreen
         }
 
@@ -149,7 +149,7 @@ impl Tuipe {
                 self.difficulty_selection = (self.difficulty_selection + 1) % Difficulty::COUNT;
             }
             KeyCode::Enter => {
-                self.test_difficulty = Difficulty::from_index(self.difficulty_selection);
+                self.test.difficulty = Difficulty::from_index(self.difficulty_selection);
                 self.state = State::MainMenu;
                 self.difficulty_selection = 0
             }
@@ -169,7 +169,7 @@ impl Tuipe {
                 self.testtype_selection = (self.testtype_selection + 1) % TestType::COUNT;
             }
             KeyCode::Enter => {
-                self.test_type = TestType::from_index(self.testtype_selection);
+                self.test.ttype = TestType::from_index(self.testtype_selection);
                 self.state = State::MainMenu;
                 self.testtype_selection = 0
             }

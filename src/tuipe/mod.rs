@@ -8,7 +8,7 @@ use rand::seq::IndexedRandom;
 use ratatui::DefaultTerminal;
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
-use structs::{Difficulty, FinalStats, State};
+use structs::{Difficulty, FinalStats, State, Test};
 pub use structs::{Language, MainMenu, TestType};
 
 fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String> {
@@ -60,19 +60,13 @@ pub struct Tuipe {
     state: State,
     should_exit: bool,
     language: Language,
-    test_type: TestType,
-    test_difficulty: Difficulty,
 
     language_selection: usize,
     testtype_selection: usize,
     mainmenu_selection: usize,
     difficulty_selection: usize,
 
-    test_is_started: bool,
-    test_start_time: u128,
-    test_is_timed: bool,
-    test_time_limit: usize,
-
+    test: Test,
     stats: FinalStats,
 
     input: Vec<String>,
@@ -99,13 +93,7 @@ impl Tuipe {
             mainmenu_selection: 0,
             difficulty_selection: 0,
 
-            test_type: TestType::Words10,
-            test_difficulty: Difficulty::Expert,
-            test_is_started: false,
-            test_start_time: 0,
-            test_is_timed: false,
-            test_time_limit: 0,
-
+            test: Test::new(),
             stats: FinalStats::new(),
 
             input: vec![String::new()],
@@ -120,9 +108,9 @@ impl Tuipe {
     fn restart_test(&mut self) {
         self.state = State::Typing;
 
-        (self.test_is_timed, self.test_time_limit) = TestType::is_timed(&self.test_type);
-        self.test_is_started = false;
-        self.test_start_time = 0;
+        (self.test.is_timed, self.test.time_limit) = TestType::is_timed(&self.test.ttype);
+        self.test.is_started = false;
+        self.test.start_time = 0;
 
         self.stats = FinalStats::new();
 
@@ -131,7 +119,7 @@ impl Tuipe {
 
         self.character_index = 0;
         self.word_index = 0;
-        self.words = get_words_as_vector(&self.language, &self.test_type);
+        self.words = get_words_as_vector(&self.language, &self.test.ttype);
     }
 
     fn check_is_test_done(&self) -> bool {
@@ -151,10 +139,10 @@ impl Tuipe {
             }
         }
 
-        if self.test_is_timed && self.test_is_started {
-            let elapsed_test_time = (get_current_time_as_millis() - self.test_start_time) as f64;
+        if self.test.is_timed && self.test.is_started {
+            let elapsed_test_time = (get_current_time_as_millis() - self.test.start_time) as f64;
             // Divide elapsed time by 1000 to convert it from milliseconds to seconds
-            if (elapsed_test_time / 1000.0) >= self.test_time_limit as f64 {
+            if (elapsed_test_time / 1000.0) >= self.test.time_limit as f64 {
                 return true;
             }
         }
