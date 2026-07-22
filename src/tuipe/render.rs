@@ -190,11 +190,15 @@ impl Tuipe {
         lines.push(Line::from(Span::styled("", Style::default())));
         lines.push(Line::from(Span::styled("", Style::default())));
         lines.push(Line::from(Span::styled(
-            "Quit: q",
+            "Restart test: Tab",
             Style::default().fg(Color::DarkGray),
         )));
         lines.push(Line::from(Span::styled(
             "Back to main menu: Esc",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Quit: q",
             Style::default().fg(Color::DarkGray),
         )));
         let input = Paragraph::new(lines)
