@@ -112,7 +112,7 @@ impl Tuipe {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(6), Constraint::Min(0)])
+            .constraints([Constraint::Min(0), Constraint::Max(4), Constraint::Min(0)])
             .split(frame.area());
         let layout_horizontal = Layout::default()
             .direction(Direction::Horizontal)
@@ -133,13 +133,13 @@ impl Tuipe {
         let input = Paragraph::new(lines)
             .style(Style::default())
             .centered()
-            .block(Block::bordered());
+            .block(Block::new());
         frame.render_widget(input, input_area);
 
         #[expect(clippy::cast_possible_truncation)]
         frame.set_cursor_position(Position::new(
             input_area.x + 1 + center_offset + cursor_col,
-            input_area.y + 1 + cursor_row,
+            input_area.y + cursor_row,
         ));
     }
 
@@ -147,7 +147,7 @@ impl Tuipe {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(12), Constraint::Min(0)])
+            .constraints([Constraint::Min(0), Constraint::Max(15), Constraint::Min(0)])
             .split(frame.area());
         let layout_horizontal = Layout::default()
             .direction(Direction::Horizontal)
@@ -185,10 +185,20 @@ impl Tuipe {
         lines.push(Line::from(Span::styled(typed_char_str, Style::default())));
         lines.push(Line::from(Span::styled(typed_word_str, Style::default())));
 
+        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled(
+            "Quit: q",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Back to main menu: Esc",
+            Style::default().fg(Color::DarkGray),
+        )));
         let input = Paragraph::new(lines)
             .style(Style::default())
             .centered()
-            .block(Block::bordered());
+            .block(Block::new());
         frame.render_widget(input, input_area);
     }
 
@@ -248,7 +258,7 @@ impl Tuipe {
         let input = Paragraph::new(lines)
             .style(Style::default())
             .centered()
-            .block(Block::bordered());
+            .block(Block::new());
         frame.render_widget(input, input_area);
     }
 
@@ -308,7 +318,7 @@ impl Tuipe {
         let input = Paragraph::new(lines)
             .style(Style::default())
             .centered()
-            .block(Block::bordered());
+            .block(Block::new());
         frame.render_widget(input, input_area);
     }
 
@@ -376,7 +386,7 @@ impl Tuipe {
         let input = Paragraph::new(lines)
             .style(Style::default())
             .centered()
-            .block(Block::bordered());
+            .block(Block::new());
         frame.render_widget(input, input_area);
     }
 
