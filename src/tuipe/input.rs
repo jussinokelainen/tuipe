@@ -1,4 +1,4 @@
-use crate::tuipe::{MainMenu, State, get_current_time_as_millis};
+use crate::tuipe::{Difficulty, MainMenu, State, get_current_time_as_millis};
 use crate::{Language, TestType, Tuipe};
 use crossterm::event::KeyCode;
 
@@ -54,6 +54,19 @@ impl Tuipe {
             self.set_start_time()
         }
         self.input[self.word_index] += new_char.to_string().as_str();
+
+        // Check that the character is correct if on master difficulty
+        if self.test_difficulty == Difficulty::Master
+            && self.input[self.word_index]
+                .chars()
+                .nth(self.character_index)
+                != self.words[self.word_index]
+                    .chars()
+                    .nth(self.character_index)
+        {
+            self.state = State::EndScreen
+        }
+
         self.character_index += 1;
     }
 
@@ -62,6 +75,11 @@ impl Tuipe {
         if self.words[w_idx].len() > self.input[w_idx].len() {
             let buffer_count = (self.words[w_idx].len() - self.input[w_idx].len()) as u8;
             self.input_buffer[w_idx] = buffer_count;
+        }
+
+        // Check that the word is correct if on Expert difficulty
+        if self.test_difficulty == Difficulty::Expert && self.words[w_idx] != self.input[w_idx] {
+            self.state = State::EndScreen
         }
 
         self.character_index = 0;
@@ -110,8 +128,9 @@ impl Tuipe {
             KeyCode::Enter => {
                 match MainMenu::from_index(self.mainmenu_selection) {
                     MainMenu::StartTest => self.restart_test(),
-                    MainMenu::SelectTestType => self.state = State::TestTypeScreen,
-                    MainMenu::SelectLanguage => self.state = State::LanguageScreen,
+                    MainMenu::SelectTestType => self.state = State::TestTypeSelector,
+                    MainMenu::SelectLanguage => self.state = State::LanguageSelector,
+                    MainMenu::SelectDifficulty => self.state = State::DifficultySelector,
                 }
                 self.mainmenu_selection = 0;
             }
@@ -120,18 +139,19 @@ impl Tuipe {
         }
     }
 
-    pub fn test_type_screen_input(&mut self, keycode: crossterm::event::KeyCode) {
+    pub fn difficulty_selector_input(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
-                self.test_selection = (self.test_selection + TestType::COUNT - 1) % TestType::COUNT;
+                self.difficulty_selection =
+                    (self.difficulty_selection + Difficulty::COUNT - 1) % Difficulty::COUNT;
             }
             KeyCode::Char('j') => {
-                self.test_selection = (self.test_selection + 1) % TestType::COUNT;
+                self.difficulty_selection = (self.difficulty_selection + 1) % Difficulty::COUNT;
             }
             KeyCode::Enter => {
-                self.test_type = TestType::from_index(self.test_selection);
+                self.test_difficulty = Difficulty::from_index(self.difficulty_selection);
                 self.state = State::MainMenu;
-                self.test_selection = 0
+                self.difficulty_selection = 0
             }
             KeyCode::Char('q') => self.should_exit = true,
             KeyCode::Esc => self.state = State::MainMenu,
@@ -139,7 +159,27 @@ impl Tuipe {
         }
     }
 
-    pub fn language_screen_input(&mut self, keycode: crossterm::event::KeyCode) {
+    pub fn test_type_selector_input(&mut self, keycode: crossterm::event::KeyCode) {
+        match keycode {
+            KeyCode::Char('k') => {
+                self.testtype_selection =
+                    (self.testtype_selection + TestType::COUNT - 1) % TestType::COUNT;
+            }
+            KeyCode::Char('j') => {
+                self.testtype_selection = (self.testtype_selection + 1) % TestType::COUNT;
+            }
+            KeyCode::Enter => {
+                self.test_type = TestType::from_index(self.testtype_selection);
+                self.state = State::MainMenu;
+                self.testtype_selection = 0
+            }
+            KeyCode::Char('q') => self.should_exit = true,
+            KeyCode::Esc => self.state = State::MainMenu,
+            _ => {}
+        }
+    }
+
+    pub fn language_selector_input(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
                 self.language_selection =

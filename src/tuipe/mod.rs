@@ -8,7 +8,7 @@ use rand::seq::IndexedRandom;
 use ratatui::DefaultTerminal;
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
-use structs::{FinalStats, State};
+use structs::{Difficulty, FinalStats, State};
 pub use structs::{Language, MainMenu, TestType};
 
 fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String> {
@@ -59,12 +59,14 @@ pub struct Tuipe {
     version: &'static str,
     state: State,
     should_exit: bool,
-    pub language: Language,
-    pub test_type: TestType,
+    language: Language,
+    test_type: TestType,
+    test_difficulty: Difficulty,
 
     language_selection: usize,
-    test_selection: usize,
+    testtype_selection: usize,
     mainmenu_selection: usize,
+    difficulty_selection: usize,
 
     test_is_started: bool,
     test_start_time: u128,
@@ -91,12 +93,14 @@ impl Tuipe {
             state: State::MainMenu,
             should_exit: false,
             language: Language::English,
-            test_type: TestType::Words10,
 
             language_selection: 0,
-            test_selection: 0,
+            testtype_selection: 0,
             mainmenu_selection: 0,
+            difficulty_selection: 0,
 
+            test_type: TestType::Words10,
+            test_difficulty: Difficulty::Expert,
             test_is_started: false,
             test_start_time: 0,
             test_is_timed: false,
@@ -164,8 +168,9 @@ impl Tuipe {
 
             if let Some(key) = event::read()?.as_key_press_event() {
                 match self.state {
-                    State::TestTypeScreen => self.test_type_screen_input(key.code),
-                    State::LanguageScreen => self.language_screen_input(key.code),
+                    State::TestTypeSelector => self.test_type_selector_input(key.code),
+                    State::LanguageSelector => self.language_selector_input(key.code),
+                    State::DifficultySelector => self.difficulty_selector_input(key.code),
                     State::MainMenu => self.main_menu_input(key.code),
                     State::EndScreen => self.end_screen_input(key.code),
                     State::Typing if key.kind == KeyEventKind::Press => {

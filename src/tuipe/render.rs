@@ -1,7 +1,5 @@
-use crate::Language;
-use crate::TestType;
 use crate::Tuipe;
-use crate::tuipe::State;
+use crate::tuipe::{Difficulty, Language, State, TestType};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Flex, Layout, Position};
 use ratatui::style::{Color, Style};
@@ -208,7 +206,7 @@ impl Tuipe {
         frame.render_widget(input, input_area);
     }
 
-    fn render_test_type_screen(&mut self, frame: &mut Frame) {
+    fn render_difficulty_selector(&mut self, frame: &mut Frame) {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
@@ -223,18 +221,18 @@ impl Tuipe {
 
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
-            "Available tests:",
+            "Available difficulties:",
             Style::default().fg(Color::Green),
         )));
         lines.push(Line::from(Span::styled("", Style::default())));
 
-        for (i, name) in TestType::as_vec().iter().enumerate() {
-            let style = if i == self.test_selection {
+        for (i, name) in Difficulty::as_vec().iter().enumerate() {
+            let style = if i == self.difficulty_selection {
                 Style::default().fg(Color::Blue)
             } else {
                 Style::default()
             };
-            let label = if i == self.test_selection {
+            let label = if i == self.difficulty_selection {
                 format!("> {name}")
             } else {
                 format!("{name}")
@@ -268,7 +266,67 @@ impl Tuipe {
         frame.render_widget(input, input_area);
     }
 
-    fn render_language_screen(&mut self, frame: &mut Frame) {
+    fn render_test_type_selector(&mut self, frame: &mut Frame) {
+        let layout_vert = Layout::default()
+            .direction(Direction::Vertical)
+            .flex(Flex::Center)
+            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
+            .split(frame.area());
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .flex(Flex::Center)
+            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
+            .split(layout_vert[1]);
+        let input_area = layout_horizontal[1];
+
+        let mut lines: Vec<Line<'static>> = Vec::new();
+        lines.push(Line::from(Span::styled(
+            "Available tests:",
+            Style::default().fg(Color::Green),
+        )));
+        lines.push(Line::from(Span::styled("", Style::default())));
+
+        for (i, name) in TestType::as_vec().iter().enumerate() {
+            let style = if i == self.testtype_selection {
+                Style::default().fg(Color::Blue)
+            } else {
+                Style::default()
+            };
+            let label = if i == self.testtype_selection {
+                format!("> {name}")
+            } else {
+                format!("{name}")
+            };
+            lines.push(Line::from(Span::styled(label, style)));
+        }
+
+        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled(
+            "Move: j/k",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Select: Enter",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Quit: q",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Back: Esc",
+            Style::default().fg(Color::DarkGray),
+        )));
+
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .centered()
+            .block(Block::new());
+        frame.render_widget(input, input_area);
+    }
+
+    fn render_language_selector(&mut self, frame: &mut Frame) {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
@@ -359,7 +417,12 @@ impl Tuipe {
         )));
         lines.push(Line::from(Span::styled("", Style::default())));
 
-        let options = ["Start test", "Select test type", "Select language"];
+        let options = [
+            "Start test",
+            "Select test type",
+            "Select language",
+            "Select difficulty",
+        ];
         for (i, name) in options.iter().enumerate() {
             let style = if i == self.mainmenu_selection {
                 Style::default().fg(Color::Blue)
@@ -411,8 +474,9 @@ impl Tuipe {
 
         match self.state {
             State::MainMenu => self.render_main_menu(frame),
-            State::LanguageScreen => self.render_language_screen(frame),
-            State::TestTypeScreen => self.render_test_type_screen(frame),
+            State::LanguageSelector => self.render_language_selector(frame),
+            State::TestTypeSelector => self.render_test_type_selector(frame),
+            State::DifficultySelector => self.render_difficulty_selector(frame),
             State::Typing => self.render_test(frame),
             State::EndScreen => self.render_endscreen(frame),
         }

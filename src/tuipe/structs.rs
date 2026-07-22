@@ -22,10 +22,35 @@ impl FinalStats {
 
 pub enum State {
     MainMenu,
-    LanguageScreen,
-    TestTypeScreen,
+    LanguageSelector,
+    TestTypeSelector,
+    DifficultySelector,
     EndScreen,
     Typing,
+}
+
+#[derive(PartialEq)]
+pub enum Difficulty {
+    Normal,
+    Expert,
+    Master,
+}
+
+impl Difficulty {
+    pub const COUNT: usize = 3;
+
+    pub fn as_vec() -> Vec<&'static str> {
+        vec!["Normal", "Expert", "Master"]
+    }
+
+    pub fn from_index(index: usize) -> Self {
+        match index {
+            0 => Difficulty::Normal,
+            1 => Difficulty::Expert,
+            2 => Difficulty::Master,
+            _ => Difficulty::Normal,
+        }
+    }
 }
 
 pub enum TestType {
@@ -100,16 +125,18 @@ pub enum MainMenu {
     StartTest,
     SelectTestType,
     SelectLanguage,
+    SelectDifficulty,
 }
 
 impl MainMenu {
-    pub const COUNT: usize = 3;
+    pub const COUNT: usize = 4;
 
     pub fn from_index(index: usize) -> Self {
         match index {
             0 => MainMenu::StartTest,
             1 => MainMenu::SelectTestType,
             2 => MainMenu::SelectLanguage,
+            3 => MainMenu::SelectDifficulty,
             _ => MainMenu::StartTest,
         }
     }
