@@ -405,14 +405,23 @@ impl Tuipe {
             Style::default().fg(Color::Magenta),
         )));
         lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled(
+            "Current settings:",
+            Style::default().fg(Color::Cyan),
+        )));
         let ttype = TestType::as_string(&self.test.ttype);
         lines.push(Line::from(Span::styled(
-            format!("Current Test type: {ttype}"),
+            format!("Test type: {ttype}"),
             Style::default().fg(Color::LightCyan),
         )));
         let lang = Language::as_string(&self.language);
         lines.push(Line::from(Span::styled(
-            format!("Current Language: {lang}"),
+            format!("Language: {lang}"),
+            Style::default().fg(Color::LightCyan),
+        )));
+        let difficulty = Difficulty::as_string(&self.test.difficulty);
+        lines.push(Line::from(Span::styled(
+            format!("Difficulty: {difficulty}"),
             Style::default().fg(Color::LightCyan),
         )));
         lines.push(Line::from(Span::styled("", Style::default())));

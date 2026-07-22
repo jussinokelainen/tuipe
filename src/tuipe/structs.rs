@@ -73,6 +73,14 @@ impl Difficulty {
             _ => Difficulty::Normal,
         }
     }
+
+    pub fn as_string(&self) -> &'static str {
+        match &self {
+            Difficulty::Normal => "Normal",
+            Difficulty::Expert => "Expert",
+            Difficulty::Master => "Master",
+        }
+    }
 }
 
 pub enum TestType {
