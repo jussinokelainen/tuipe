@@ -69,6 +69,8 @@ impl Tuipe {
                 let new_line = std::mem::take(&mut current_line);
                 if cursor_found {
                     lines.push(Line::from(new_line));
+                } else {
+                    lines = vec![Line::from(new_line)];
                 }
                 current_line_width = 0;
             }
