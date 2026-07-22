@@ -119,20 +119,19 @@ impl Tuipe {
     pub fn main_menu_input(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
-                self.mainmenu_selection =
-                    (self.mainmenu_selection + MainMenu::COUNT - 1) % MainMenu::COUNT;
+                self.menu_selection = (self.menu_selection + MainMenu::COUNT - 1) % MainMenu::COUNT;
             }
             KeyCode::Char('j') => {
-                self.mainmenu_selection = (self.mainmenu_selection + 1) % MainMenu::COUNT;
+                self.menu_selection = (self.menu_selection + 1) % MainMenu::COUNT;
             }
             KeyCode::Enter => {
-                match MainMenu::from_index(self.mainmenu_selection) {
+                match MainMenu::from_index(self.menu_selection) {
                     MainMenu::StartTest => self.restart_test(),
                     MainMenu::SelectTestType => self.state = State::TestTypeSelector,
                     MainMenu::SelectLanguage => self.state = State::LanguageSelector,
                     MainMenu::SelectDifficulty => self.state = State::DifficultySelector,
                 }
-                self.mainmenu_selection = 0;
+                self.menu_selection = 0;
             }
             KeyCode::Char('q') => self.should_exit = true,
             _ => {}
@@ -142,16 +141,16 @@ impl Tuipe {
     pub fn difficulty_selector_input(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
-                self.difficulty_selection =
-                    (self.difficulty_selection + Difficulty::COUNT - 1) % Difficulty::COUNT;
+                self.menu_selection =
+                    (self.menu_selection + Difficulty::COUNT - 1) % Difficulty::COUNT;
             }
             KeyCode::Char('j') => {
-                self.difficulty_selection = (self.difficulty_selection + 1) % Difficulty::COUNT;
+                self.menu_selection = (self.menu_selection + 1) % Difficulty::COUNT;
             }
             KeyCode::Enter => {
-                self.test.difficulty = Difficulty::from_index(self.difficulty_selection);
+                self.test.difficulty = Difficulty::from_index(self.menu_selection);
                 self.state = State::MainMenu;
-                self.difficulty_selection = 0
+                self.menu_selection = 0
             }
             KeyCode::Char('q') => self.should_exit = true,
             KeyCode::Esc => self.state = State::MainMenu,
@@ -162,16 +161,15 @@ impl Tuipe {
     pub fn test_type_selector_input(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
-                self.testtype_selection =
-                    (self.testtype_selection + TestType::COUNT - 1) % TestType::COUNT;
+                self.menu_selection = (self.menu_selection + TestType::COUNT - 1) % TestType::COUNT;
             }
             KeyCode::Char('j') => {
-                self.testtype_selection = (self.testtype_selection + 1) % TestType::COUNT;
+                self.menu_selection = (self.menu_selection + 1) % TestType::COUNT;
             }
             KeyCode::Enter => {
-                self.test.ttype = TestType::from_index(self.testtype_selection);
+                self.test.ttype = TestType::from_index(self.menu_selection);
                 self.state = State::MainMenu;
-                self.testtype_selection = 0
+                self.menu_selection = 0
             }
             KeyCode::Char('q') => self.should_exit = true,
             KeyCode::Esc => self.state = State::MainMenu,
@@ -182,16 +180,15 @@ impl Tuipe {
     pub fn language_selector_input(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
-                self.language_selection =
-                    (self.language_selection + Language::COUNT - 1) % Language::COUNT;
+                self.menu_selection = (self.menu_selection + Language::COUNT - 1) % Language::COUNT;
             }
             KeyCode::Char('j') => {
-                self.language_selection = (self.language_selection + 1) % Language::COUNT;
+                self.menu_selection = (self.menu_selection + 1) % Language::COUNT;
             }
             KeyCode::Enter => {
-                self.language = Language::from_index(self.language_selection);
+                self.language = Language::from_index(self.menu_selection);
                 self.state = State::MainMenu;
-                self.language_selection = 0
+                self.menu_selection = 0
             }
             KeyCode::Char('q') => self.should_exit = true,
             KeyCode::Esc => self.state = State::MainMenu,

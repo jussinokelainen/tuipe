@@ -61,10 +61,7 @@ pub struct Tuipe {
     should_exit: bool,
     language: Language,
 
-    language_selection: usize,
-    testtype_selection: usize,
-    mainmenu_selection: usize,
-    difficulty_selection: usize,
+    menu_selection: usize,
 
     test: Test,
     stats: FinalStats,
@@ -88,10 +85,7 @@ impl Tuipe {
             should_exit: false,
             language: Language::English,
 
-            language_selection: 0,
-            testtype_selection: 0,
-            mainmenu_selection: 0,
-            difficulty_selection: 0,
+            menu_selection: 0,
 
             test: Test::new(),
             stats: FinalStats::new(),

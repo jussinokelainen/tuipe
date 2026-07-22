@@ -227,12 +227,12 @@ impl Tuipe {
         lines.push(Line::from(Span::styled("", Style::default())));
 
         for (i, name) in Difficulty::as_vec().iter().enumerate() {
-            let style = if i == self.difficulty_selection {
+            let style = if i == self.menu_selection {
                 Style::default().fg(Color::Blue)
             } else {
                 Style::default()
             };
-            let label = if i == self.difficulty_selection {
+            let label = if i == self.menu_selection {
                 format!("> {name}")
             } else {
                 format!("{name}")
@@ -287,12 +287,12 @@ impl Tuipe {
         lines.push(Line::from(Span::styled("", Style::default())));
 
         for (i, name) in TestType::as_vec().iter().enumerate() {
-            let style = if i == self.testtype_selection {
+            let style = if i == self.menu_selection {
                 Style::default().fg(Color::Blue)
             } else {
                 Style::default()
             };
-            let label = if i == self.testtype_selection {
+            let label = if i == self.menu_selection {
                 format!("> {name}")
             } else {
                 format!("{name}")
@@ -347,12 +347,12 @@ impl Tuipe {
         lines.push(Line::from(Span::styled("", Style::default())));
 
         for (i, name) in Language::as_vec().iter().enumerate() {
-            let style = if i == self.language_selection {
+            let style = if i == self.menu_selection {
                 Style::default().fg(Color::Blue)
             } else {
                 Style::default()
             };
-            let label = if i == self.language_selection {
+            let label = if i == self.menu_selection {
                 format!("> {name}")
             } else {
                 format!("{name}")
@@ -424,12 +424,12 @@ impl Tuipe {
             "Select difficulty",
         ];
         for (i, name) in options.iter().enumerate() {
-            let style = if i == self.mainmenu_selection {
+            let style = if i == self.menu_selection {
                 Style::default().fg(Color::Blue)
             } else {
                 Style::default()
             };
-            let label = if i == self.mainmenu_selection {
+            let label = if i == self.menu_selection {
                 format!("> {name}")
             } else {
                 format!("{name}")
