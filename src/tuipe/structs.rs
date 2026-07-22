@@ -10,8 +10,8 @@ pub struct Test {
 impl Test {
     pub fn new() -> Self {
         Self {
-            ttype: TestType::Words10,
-            difficulty: Difficulty::Expert,
+            ttype: TestType::Words25,
+            difficulty: Difficulty::Normal,
             is_started: false,
             start_time: 0,
             is_timed: false,
