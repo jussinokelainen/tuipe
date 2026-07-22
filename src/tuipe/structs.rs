@@ -72,6 +72,28 @@ impl TestType {
             _ => TestType::Words10,
         }
     }
+
+    pub fn as_string(&self) -> &'static str {
+        match &self {
+            TestType::Words10 => "10 Words",
+            TestType::Words25 => "25 Words",
+            TestType::Words50 => "50 Words",
+            TestType::Time10 => "10 Seconds",
+            TestType::Time30 => "30 Seconds",
+            TestType::Time60 => "60 Seconds",
+        }
+    }
+
+    pub fn as_vec() -> Vec<&'static str> {
+        vec![
+            "10 Words",
+            "25 Words",
+            "50 Words",
+            "10 Seconds",
+            "30 Seconds",
+            "60 Seconds",
+        ]
+    }
 }
 
 pub enum MainMenu {
@@ -112,6 +134,26 @@ impl Language {
             3 => Language::English10k,
             4 => Language::English25k,
             _ => Language::English,
+        }
+    }
+
+    pub fn as_vec() -> Vec<&'static str> {
+        vec![
+            "English",
+            "English 1k",
+            "English 5k",
+            "English 10k",
+            "English 25k",
+        ]
+    }
+
+    pub fn as_string(&self) -> &'static str {
+        match &self {
+            Language::English => "English",
+            Language::English1k => "English",
+            Language::English5k => "English",
+            Language::English10k => "English",
+            Language::English25k => "English",
         }
     }
 }

@@ -112,20 +112,12 @@ impl Tuipe {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
-            .constraints([
-                Constraint::Percentage(40),
-                Constraint::Percentage(20),
-                Constraint::Percentage(40),
-            ])
+            .constraints([Constraint::Min(0), Constraint::Max(6), Constraint::Min(0)])
             .split(frame.area());
         let layout_horizontal = Layout::default()
             .direction(Direction::Horizontal)
             .flex(Flex::Center)
-            .constraints([
-                Constraint::Percentage(25),
-                Constraint::Percentage(50),
-                Constraint::Percentage(25),
-            ])
+            .constraints([Constraint::Min(0), Constraint::Max(100), Constraint::Min(0)])
             .split(layout_vert[1]);
         let input_area = layout_horizontal[1];
         let text_width = input_area.width.saturating_sub(2);
@@ -155,20 +147,12 @@ impl Tuipe {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
-            .constraints([
-                Constraint::Percentage(40),
-                Constraint::Percentage(20),
-                Constraint::Percentage(40),
-            ])
+            .constraints([Constraint::Min(0), Constraint::Max(12), Constraint::Min(0)])
             .split(frame.area());
         let layout_horizontal = Layout::default()
             .direction(Direction::Horizontal)
             .flex(Flex::Center)
-            .constraints([
-                Constraint::Percentage(40),
-                Constraint::Percentage(20),
-                Constraint::Percentage(40),
-            ])
+            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
             .split(layout_vert[1]);
         let input_area = layout_horizontal[1];
 
@@ -185,7 +169,7 @@ impl Tuipe {
             "Words typed: ".to_string() + &(self.stats.typed_words).to_string();
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
-            "Test over.",
+            format!("Test done: {}", TestType::as_string(&self.test_type)),
             Style::default().fg(Color::Green),
         )));
         lines.push(Line::from(Span::styled(time_str, Style::default())));
@@ -212,20 +196,12 @@ impl Tuipe {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
-            .constraints([
-                Constraint::Percentage(35),
-                Constraint::Percentage(30),
-                Constraint::Percentage(35),
-            ])
+            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
             .split(frame.area());
         let layout_horizontal = Layout::default()
             .direction(Direction::Horizontal)
             .flex(Flex::Center)
-            .constraints([
-                Constraint::Percentage(40),
-                Constraint::Percentage(20),
-                Constraint::Percentage(40),
-            ])
+            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
             .split(layout_vert[1]);
         let input_area = layout_horizontal[1];
 
@@ -236,15 +212,7 @@ impl Tuipe {
         )));
         lines.push(Line::from(Span::styled("", Style::default())));
 
-        let languages = [
-            "10 Words",
-            "25 Words",
-            "50 Words",
-            "10 Seconds",
-            "30 Seconds",
-            "60 Seconds",
-        ];
-        for (i, name) in languages.iter().enumerate() {
+        for (i, name) in TestType::as_vec().iter().enumerate() {
             let style = if i == self.test_selection {
                 Style::default().fg(Color::Blue)
             } else {
@@ -269,11 +237,11 @@ impl Tuipe {
             Style::default().fg(Color::DarkGray),
         )));
         lines.push(Line::from(Span::styled(
-            "Back: Esc",
+            "Quit: q",
             Style::default().fg(Color::DarkGray),
         )));
         lines.push(Line::from(Span::styled(
-            "Quit: q",
+            "Back: Esc",
             Style::default().fg(Color::DarkGray),
         )));
 
@@ -288,20 +256,12 @@ impl Tuipe {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
-            .constraints([
-                Constraint::Percentage(35),
-                Constraint::Percentage(30),
-                Constraint::Percentage(35),
-            ])
+            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
             .split(frame.area());
         let layout_horizontal = Layout::default()
             .direction(Direction::Horizontal)
             .flex(Flex::Center)
-            .constraints([
-                Constraint::Percentage(40),
-                Constraint::Percentage(20),
-                Constraint::Percentage(40),
-            ])
+            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
             .split(layout_vert[1]);
         let input_area = layout_horizontal[1];
 
@@ -312,14 +272,7 @@ impl Tuipe {
         )));
         lines.push(Line::from(Span::styled("", Style::default())));
 
-        let languages = [
-            "English",
-            "English 1k",
-            "English 5k",
-            "English 10k",
-            "English 25k",
-        ];
-        for (i, name) in languages.iter().enumerate() {
+        for (i, name) in Language::as_vec().iter().enumerate() {
             let style = if i == self.language_selection {
                 Style::default().fg(Color::Blue)
             } else {
@@ -344,11 +297,11 @@ impl Tuipe {
             Style::default().fg(Color::DarkGray),
         )));
         lines.push(Line::from(Span::styled(
-            "Back: Esc",
+            "Quit: q",
             Style::default().fg(Color::DarkGray),
         )));
         lines.push(Line::from(Span::styled(
-            "Quit: q",
+            "Back: Esc",
             Style::default().fg(Color::DarkGray),
         )));
 
@@ -363,20 +316,12 @@ impl Tuipe {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
-            .constraints([
-                Constraint::Percentage(35),
-                Constraint::Percentage(30),
-                Constraint::Percentage(35),
-            ])
+            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
             .split(frame.area());
         let layout_horizontal = Layout::default()
             .direction(Direction::Horizontal)
             .flex(Flex::Center)
-            .constraints([
-                Constraint::Percentage(40),
-                Constraint::Percentage(20),
-                Constraint::Percentage(40),
-            ])
+            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
             .split(layout_vert[1]);
         let input_area = layout_horizontal[1];
 
@@ -386,25 +331,12 @@ impl Tuipe {
             Style::default().fg(Color::Magenta),
         )));
         lines.push(Line::from(Span::styled("", Style::default())));
-        let ttype = match self.test_type {
-            TestType::Words10 => "10 Words",
-            TestType::Words25 => "25 Words",
-            TestType::Words50 => "50 Words",
-            TestType::Time10 => "10 Seconds",
-            TestType::Time30 => "30 Seconds",
-            TestType::Time60 => "60 Seconds",
-        };
+        let ttype = TestType::as_string(&self.test_type);
         lines.push(Line::from(Span::styled(
             format!("Current Test type: {ttype}"),
             Style::default().fg(Color::LightCyan),
         )));
-        let lang = match self.language {
-            Language::English => "English",
-            Language::English1k => "English 1k",
-            Language::English5k => "English 5k",
-            Language::English10k => "English 10k",
-            Language::English25k => "English 25k",
-        };
+        let lang = Language::as_string(&self.language);
         lines.push(Line::from(Span::styled(
             format!("Current Language: {lang}"),
             Style::default().fg(Color::LightCyan),
