@@ -1,5 +1,6 @@
 APP := tuipe
 BIN := target/release/tuipe
+VERSION := $(shell printf "r%s.%s" "$$(git rev-list --count HEAD)" "$$(git rev-parse --short HEAD)")
 
 RS_FILES := $(shell find src/ -name '*.rs')
 
@@ -14,7 +15,7 @@ build: $(BIN)
 
 $(BIN): $(RS_FILES) Cargo.lock Cargo.toml
 	@printf "\e[36m==> \e[0mCompiling...\n"
-	@DATADIR=$(DATADIR) cargo build --release
+	@DATADIR=$(DATADIR) VERSION=$(VERSION) cargo build --release
 	@printf "[\033[32m OK \033[0m] Build complete\n"
 
 run:

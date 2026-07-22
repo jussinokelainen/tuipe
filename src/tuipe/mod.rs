@@ -56,6 +56,7 @@ fn get_current_time_as_millis() -> u128 {
 }
 
 pub struct Tuipe {
+    version: &'static str,
     state: State,
     should_exit: bool,
     pub language: Language,
@@ -83,6 +84,10 @@ pub struct Tuipe {
 impl Tuipe {
     pub fn new() -> Self {
         Self {
+            version: match option_env!("VERSION") {
+                Some(version_num) => version_num,
+                None => "UNKNOWN",
+            },
             state: State::MainMenu,
             should_exit: false,
             language: Language::English,

@@ -337,7 +337,7 @@ impl Tuipe {
 
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
-            "Tuipe, TUI typing test",
+            "Tuipe",
             Style::default().fg(Color::Magenta),
         )));
         lines.push(Line::from(Span::styled("", Style::default())));
@@ -380,6 +380,12 @@ impl Tuipe {
         )));
         lines.push(Line::from(Span::styled(
             "Quit: q",
+            Style::default().fg(Color::DarkGray),
+        )));
+        // Print the program version at the bottom
+        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled(
+            format!("version: {}", self.version),
             Style::default().fg(Color::DarkGray),
         )));
 
