@@ -390,7 +390,7 @@ impl Tuipe {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
+            .constraints([Constraint::Min(0), Constraint::Max(18), Constraint::Min(0)])
             .split(frame.area());
         let layout_horizontal = Layout::default()
             .direction(Direction::Horizontal)
