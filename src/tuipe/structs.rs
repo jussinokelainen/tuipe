@@ -150,10 +150,10 @@ impl Language {
     pub fn as_string(&self) -> &'static str {
         match &self {
             Language::English => "English",
-            Language::English1k => "English",
-            Language::English5k => "English",
-            Language::English10k => "English",
-            Language::English25k => "English",
+            Language::English1k => "English 1k",
+            Language::English5k => "English 5k",
+            Language::English10k => "English 10k",
+            Language::English25k => "English 25k",
         }
     }
 }
