@@ -162,11 +162,7 @@ impl Tuipe {
             Style::default().fg(Color::Green),
         )));
 
-        lines.push(Line::from(Span::styled(
-            format!("Time: {} seconds", self.stats.time / 1000.0),
-            Style::default(),
-        )));
-        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::raw("")));
 
         lines.push(Line::from(Span::styled(
             format!("WPM: {}", (self.stats.wpm * 100.0).round() / 100.0),
@@ -176,23 +172,27 @@ impl Tuipe {
             format!("Accuracy: {}%", (self.stats.accuracy * 100.0).round()),
             Style::default().fg(Color::Blue),
         )));
-        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::raw("")));
 
-        lines.push(Line::from(Span::styled(
-            format!("raw WPM: {}", (self.stats.wpm_raw * 100.0).round() / 100.0),
-            Style::default(),
-        )));
-        lines.push(Line::from(Span::styled(
-            format!("Characters: {}", self.stats.typed_characters),
-            Style::default(),
-        )));
-        lines.push(Line::from(Span::styled(
-            format!("Words: {}", self.stats.typed_words),
-            Style::default(),
-        )));
+        lines.push(Line::from(Span::raw(format!(
+            "Time: {} seconds",
+            self.stats.time / 1000.0
+        ))));
+        lines.push(Line::from(Span::raw(format!(
+            "raw WPM: {}",
+            (self.stats.wpm_raw * 100.0).round() / 100.0
+        ))));
+        lines.push(Line::from(Span::raw(format!(
+            "Characters: {}",
+            self.stats.typed_characters
+        ))));
+        lines.push(Line::from(Span::raw(format!(
+            "Words: {}",
+            self.stats.typed_words
+        ))));
 
-        lines.push(Line::from(Span::styled("", Style::default())));
-        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::styled(
             "Restart test: Tab",
             Style::default().fg(Color::DarkGray),
@@ -230,7 +230,7 @@ impl Tuipe {
             "Available difficulties:",
             Style::default().fg(Color::Green),
         )));
-        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::raw("")));
 
         for (i, name) in Difficulty::as_vec().iter().enumerate() {
             let style = if i == self.menu_selection {
@@ -246,8 +246,8 @@ impl Tuipe {
             lines.push(Line::from(Span::styled(label, style)));
         }
 
-        lines.push(Line::from(Span::styled("", Style::default())));
-        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::styled(
             "Move: j/k",
             Style::default().fg(Color::DarkGray),
@@ -290,7 +290,7 @@ impl Tuipe {
             "Available tests:",
             Style::default().fg(Color::Green),
         )));
-        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::raw("")));
 
         for (i, name) in TestType::as_vec().iter().enumerate() {
             let style = if i == self.menu_selection {
@@ -306,8 +306,8 @@ impl Tuipe {
             lines.push(Line::from(Span::styled(label, style)));
         }
 
-        lines.push(Line::from(Span::styled("", Style::default())));
-        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::styled(
             "Move: j/k",
             Style::default().fg(Color::DarkGray),
@@ -350,7 +350,7 @@ impl Tuipe {
             "Available languages:",
             Style::default().fg(Color::Green),
         )));
-        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::raw("")));
 
         for (i, name) in Language::as_vec().iter().enumerate() {
             let style = if i == self.menu_selection {
@@ -366,8 +366,8 @@ impl Tuipe {
             lines.push(Line::from(Span::styled(label, style)));
         }
 
-        lines.push(Line::from(Span::styled("", Style::default())));
-        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::styled(
             "Move: j/k",
             Style::default().fg(Color::DarkGray),
@@ -410,7 +410,7 @@ impl Tuipe {
             "Tuipe",
             Style::default().fg(Color::Magenta),
         )));
-        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::styled(
             "Current settings:",
             Style::default().fg(Color::Cyan),
@@ -430,7 +430,7 @@ impl Tuipe {
             format!("Difficulty: {difficulty}"),
             Style::default().fg(Color::LightCyan),
         )));
-        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::raw("")));
 
         let options = [
             "Start test",
@@ -452,8 +452,8 @@ impl Tuipe {
             lines.push(Line::from(Span::styled(label, style)));
         }
 
-        lines.push(Line::from(Span::styled("", Style::default())));
-        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::styled(
             "Move: j/k",
             Style::default().fg(Color::DarkGray),
