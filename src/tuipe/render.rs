@@ -156,34 +156,40 @@ impl Tuipe {
             .split(layout_vert[1]);
         let input_area = layout_horizontal[1];
 
-        let time_str: String =
-            "Your time: ".to_string() + &(self.stats.time / 1000.0).to_string() + " seconds.";
-        // Multiplication and division by 100 to enable rounding wpm
-        let wpm_str: String =
-            "WPM: ".to_string() + &((self.stats.wpm * 100.0).round() / 100.0).to_string();
-        let raw_wpm_str: String =
-            "raw WPM: ".to_string() + &((self.stats.wpm_raw * 100.0).round() / 100.0).to_string();
-        let typed_char_str: String =
-            "Characters typed: ".to_string() + &(self.stats.typed_characters).to_string();
-        let typed_word_str: String =
-            "Words typed: ".to_string() + &(self.stats.typed_words).to_string();
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
             format!("Test done: {}", TestType::as_string(&self.test.ttype)),
             Style::default().fg(Color::Green),
         )));
-        lines.push(Line::from(Span::styled(time_str, Style::default())));
+
+        lines.push(Line::from(Span::styled(
+            format!("Time: {} seconds", self.stats.time / 1000.0),
+            Style::default(),
+        )));
         lines.push(Line::from(Span::styled("", Style::default())));
 
         lines.push(Line::from(Span::styled(
-            wpm_str,
+            format!("WPM: {}", (self.stats.wpm * 100.0).round() / 100.0),
             Style::default().fg(Color::Blue),
         )));
-        lines.push(Line::from(Span::styled(raw_wpm_str, Style::default())));
+        lines.push(Line::from(Span::styled(
+            format!("Accuracy: {}%", (self.stats.accuracy * 100.0).round()),
+            Style::default().fg(Color::Blue),
+        )));
         lines.push(Line::from(Span::styled("", Style::default())));
 
-        lines.push(Line::from(Span::styled(typed_char_str, Style::default())));
-        lines.push(Line::from(Span::styled(typed_word_str, Style::default())));
+        lines.push(Line::from(Span::styled(
+            format!("raw WPM: {}", (self.stats.wpm_raw * 100.0).round() / 100.0),
+            Style::default(),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("Characters: {}", self.stats.typed_characters),
+            Style::default(),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("Words: {}", self.stats.typed_words),
+            Style::default(),
+        )));
 
         lines.push(Line::from(Span::styled("", Style::default())));
         lines.push(Line::from(Span::styled("", Style::default())));
@@ -477,7 +483,7 @@ impl Tuipe {
     pub fn render(&mut self, frame: &mut Frame) {
         // check if test done instead of self.words == self.input
         if !self.stats.time_is_set && self.check_is_test_done() {
-            self.get_time_and_wpm();
+            self.set_final_stats();
             self.state = State::EndScreen;
         }
 

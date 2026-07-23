@@ -5,6 +5,8 @@ pub struct Test {
     pub start_time: u128,
     pub is_timed: bool,
     pub time_limit: usize,
+    pub correct_chars: u16,
+    pub incorrect_chars: u16,
 }
 
 impl Test {
@@ -16,6 +18,8 @@ impl Test {
             start_time: 0,
             is_timed: false,
             time_limit: 0,
+            correct_chars: 0,
+            incorrect_chars: 0,
         }
     }
 }
@@ -23,6 +27,7 @@ impl Test {
 pub struct FinalStats {
     pub wpm: f64,
     pub wpm_raw: f64,
+    pub accuracy: f64,
     pub time: f64,
     pub time_is_set: bool,
     pub typed_words: usize,
@@ -34,6 +39,7 @@ impl FinalStats {
         Self {
             wpm: 0.0,
             wpm_raw: 0.0,
+            accuracy: 0.0,
             time: 0.0,
             time_is_set: false,
             typed_words: 0,

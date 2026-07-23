@@ -7,7 +7,7 @@ impl Tuipe {
         self.test.start_time = get_current_time_as_millis()
     }
 
-    pub fn get_time_and_wpm(&mut self) {
+    pub fn set_final_stats(&mut self) {
         // Calculate time
         self.stats.time = (get_current_time_as_millis() - self.test.start_time) as f64;
         self.stats.time_is_set = true;
@@ -46,6 +46,8 @@ impl Tuipe {
         self.stats.wpm_raw = (raw_words * 60.0) / (self.stats.time / 1000.0);
         self.stats.typed_words = typed_words;
         self.stats.typed_characters = correct_characters;
+        self.stats.accuracy = self.test.correct_chars as f64
+            / (self.test.correct_chars + self.test.incorrect_chars) as f64;
     }
 
     fn enter_char(&mut self, new_char: char) {
@@ -55,16 +57,23 @@ impl Tuipe {
         }
         self.input[self.word_index] += new_char.to_string().as_str();
 
-        // Check that the character is correct if on master difficulty
-        if self.test.difficulty == Difficulty::Master
-            && self.input[self.word_index]
+        // Check whether the character given is correct or not
+        if self.input[self.word_index]
+            .chars()
+            .nth(self.character_index)
+            != self.words[self.word_index]
                 .chars()
                 .nth(self.character_index)
-                != self.words[self.word_index]
-                    .chars()
-                    .nth(self.character_index)
         {
-            self.state = State::EndScreen
+            if self.test.difficulty == Difficulty::Master {
+                // End the test if on Master difficulty and input has
+                // incorrect character
+                self.state = State::EndScreen
+            } else {
+                self.test.incorrect_chars += 1;
+            }
+        } else {
+            self.test.correct_chars += 1;
         }
 
         self.character_index += 1;

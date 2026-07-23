@@ -105,6 +105,8 @@ impl Tuipe {
         (self.test.is_timed, self.test.time_limit) = TestType::is_timed(&self.test.ttype);
         self.test.is_started = false;
         self.test.start_time = 0;
+        self.test.correct_chars = 0;
+        self.test.incorrect_chars = 0;
 
         self.stats = FinalStats::new();
 
