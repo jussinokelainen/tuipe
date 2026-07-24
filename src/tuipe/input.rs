@@ -147,6 +147,7 @@ impl Tuipe {
                     MainMenu::SelectTestType => self.state = State::TestTypeSelector,
                     MainMenu::SelectLanguage => self.state = State::LanguageSelector,
                     MainMenu::SelectDifficulty => self.state = State::DifficultySelector,
+                    MainMenu::ViewStats => self.state = State::StatsScreen,
                 }
                 self.menu_selection = 0;
             }
@@ -212,6 +213,15 @@ impl Tuipe {
             }
             KeyCode::Char('q') => self.should_exit = true,
             KeyCode::Esc => self.state = State::MainMenu,
+            _ => {}
+        }
+    }
+
+    // Input controls for the stats screen
+    pub fn stats_screen_input(&mut self, keycode: crossterm::event::KeyCode) {
+        match keycode {
+            KeyCode::Esc => self.state = State::MainMenu,
+            KeyCode::Char('q') => self.should_exit = true,
             _ => {}
         }
     }

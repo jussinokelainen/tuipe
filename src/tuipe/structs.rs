@@ -74,6 +74,7 @@ impl DBdata {
 
 pub enum State {
     MainMenu,
+    StatsScreen,
     LanguageSelector,
     TestTypeSelector,
     DifficultySelector,
@@ -186,10 +187,11 @@ pub enum MainMenu {
     SelectTestType,
     SelectLanguage,
     SelectDifficulty,
+    ViewStats,
 }
 
 impl MainMenu {
-    pub const COUNT: usize = 4;
+    pub const COUNT: usize = 5;
 
     pub fn from_index(index: usize) -> Self {
         match index {
@@ -197,6 +199,7 @@ impl MainMenu {
             1 => MainMenu::SelectTestType,
             2 => MainMenu::SelectLanguage,
             3 => MainMenu::SelectDifficulty,
+            4 => MainMenu::ViewStats,
             _ => MainMenu::StartTest,
         }
     }

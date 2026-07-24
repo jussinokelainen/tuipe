@@ -197,6 +197,7 @@ impl Tuipe {
 
             if let Some(key) = event::read()?.as_key_press_event() {
                 match self.state {
+                    State::StatsScreen => self.stats_screen_input(key.code),
                     State::TestTypeSelector => self.test_type_selector_input(key.code),
                     State::LanguageSelector => self.language_selector_input(key.code),
                     State::DifficultySelector => self.difficulty_selector_input(key.code),

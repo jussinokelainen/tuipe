@@ -192,6 +192,7 @@ impl Tuipe {
             "Select test type",
             "Select language",
             "Select difficulty",
+            "View stats history",
         ];
         for (i, name) in options.iter().enumerate() {
             let style = if i == self.menu_selection {
@@ -214,6 +215,61 @@ impl Tuipe {
         lines.push(Line::from(Span::styled("", Style::default())));
         lines.push(Line::from(Span::styled(
             format!("version: {}", self.version),
+            Style::default().fg(Color::DarkGray),
+        )));
+
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .centered()
+            .block(Block::new());
+        frame.render_widget(input, input_area);
+    }
+
+    // Renders the difficulty selector screen
+    fn render_stats_screen(&mut self, frame: &mut Frame) {
+        let layout_vert = Layout::default()
+            .direction(Direction::Vertical)
+            .flex(Flex::Center)
+            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
+            .split(frame.area());
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .flex(Flex::Center)
+            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
+            .split(layout_vert[1]);
+        let input_area = layout_horizontal[1];
+
+        let mut lines: Vec<Line<'static>> = Vec::new();
+        let stats_res = self.get_stats_from_db();
+        match stats_res {
+            Ok(v) => {
+                lines.push(Line::from(Span::styled(
+                    "Your stats:",
+                    Style::default().fg(Color::Cyan),
+                )));
+                lines.push(Line::from(Span::raw("")));
+                lines.push(Line::from(Span::raw(format!(
+                    "Tests completed: {}",
+                    v.len()
+                ))));
+            }
+            Err(e) => {
+                lines.push(Line::from(Span::styled(
+                    "Error:",
+                    Style::default().fg(Color::Red),
+                )));
+                lines.push(Line::from(Span::raw(e)));
+            }
+        }
+
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::styled(
+            "Back: Esc",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Quit: q",
             Style::default().fg(Color::DarkGray),
         )));
 
@@ -467,6 +523,7 @@ impl Tuipe {
 
         match self.state {
             State::MainMenu => self.render_main_menu(frame),
+            State::StatsScreen => self.render_stats_screen(frame),
             State::LanguageSelector => self.render_language_selector(frame),
             State::TestTypeSelector => self.render_test_type_selector(frame),
             State::DifficultySelector => self.render_difficulty_selector(frame),
