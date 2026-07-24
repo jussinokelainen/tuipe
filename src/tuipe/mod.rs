@@ -9,7 +9,7 @@ use rand::seq::IndexedRandom;
 use ratatui::DefaultTerminal;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{env, fs};
+use std::{env, fs, fs::create_dir_all};
 use structs::{Difficulty, FinalStats, State, Test};
 pub use structs::{Language, MainMenu, TestType};
 
@@ -63,8 +63,13 @@ fn get_current_time_as_millis() -> u128 {
 
 // Returns the filepath of the local results database
 fn db_path() -> PathBuf {
-    let path = PathBuf::from(env::var("HOME").expect("$HOME not set"))
-        .join(".local/share/tuipe/results.db");
+    let mut path =
+        PathBuf::from(env::var("HOME").expect("$HOME not set")).join(".local/share/tuipe/");
+    match create_dir_all(&path) {
+        Ok(_) => {}
+        Err(_) => {}
+    }
+    path = path.join("results.db");
     path
 }
 
