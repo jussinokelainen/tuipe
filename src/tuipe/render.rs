@@ -1,7 +1,7 @@
 use crate::Tuipe;
 use crate::tuipe::{Difficulty, Language, State, TestType};
 use ratatui::Frame;
-use ratatui::layout::{Constraint, Direction, Flex, Layout, Position};
+use ratatui::layout::{Constraint, Direction, Flex, Layout, Position, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Paragraph};
@@ -110,19 +110,33 @@ impl Tuipe {
         (lines, (cursor_row, cursor_col))
     }
 
-    // Renders the typing test screen
-    fn render_test(&mut self, frame: &mut Frame) {
+    // Function for rendering screens, returns a Rect positioned at the center of
+    // the screen with maximum width and height of given parameters
+    fn create_layout(&self, width: u16, height: u16, frame: &mut Frame) -> Rect {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
             .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(4), Constraint::Min(0)])
+            .constraints([
+                Constraint::Min(0),
+                Constraint::Max(height),
+                Constraint::Min(0),
+            ])
             .split(frame.area());
         let layout_horizontal = Layout::default()
             .direction(Direction::Horizontal)
             .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(100), Constraint::Min(0)])
+            .constraints([
+                Constraint::Min(0),
+                Constraint::Max(width),
+                Constraint::Min(0),
+            ])
             .split(layout_vert[1]);
-        let input_area = layout_horizontal[1];
+        layout_horizontal[1]
+    }
+
+    // Renders the typing test screen
+    fn render_test(&mut self, frame: &mut Frame) {
+        let input_area = self.create_layout(100, 4, frame);
         let text_width = input_area.width.saturating_sub(2);
         let (lines, (cursor_row, cursor_col)) = self.create_test_lines(text_width);
 
@@ -148,17 +162,7 @@ impl Tuipe {
 
     // Renders the main menu
     fn render_main_menu(&mut self, frame: &mut Frame) {
-        let layout_vert = Layout::default()
-            .direction(Direction::Vertical)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(18), Constraint::Min(0)])
-            .split(frame.area());
-        let layout_horizontal = Layout::default()
-            .direction(Direction::Horizontal)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
-            .split(layout_vert[1]);
-        let input_area = layout_horizontal[1];
+        let input_area = self.create_layout(40, 18, frame);
 
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
@@ -227,17 +231,7 @@ impl Tuipe {
 
     // Renders the difficulty selector screen
     fn render_stats_screen(&mut self, frame: &mut Frame) {
-        let layout_vert = Layout::default()
-            .direction(Direction::Vertical)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
-            .split(frame.area());
-        let layout_horizontal = Layout::default()
-            .direction(Direction::Horizontal)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
-            .split(layout_vert[1]);
-        let input_area = layout_horizontal[1];
+        let input_area = self.create_layout(40, 16, frame);
 
         let mut lines: Vec<Line<'static>> = Vec::new();
         let stats_res = self.get_stats_from_db();
@@ -282,17 +276,7 @@ impl Tuipe {
 
     // Renders the difficulty selector screen
     fn render_difficulty_selector(&mut self, frame: &mut Frame) {
-        let layout_vert = Layout::default()
-            .direction(Direction::Vertical)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
-            .split(frame.area());
-        let layout_horizontal = Layout::default()
-            .direction(Direction::Horizontal)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
-            .split(layout_vert[1]);
-        let input_area = layout_horizontal[1];
+        let input_area = self.create_layout(40, 16, frame);
 
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
@@ -328,17 +312,7 @@ impl Tuipe {
 
     // Renders the test type selector screen
     fn render_test_type_selector(&mut self, frame: &mut Frame) {
-        let layout_vert = Layout::default()
-            .direction(Direction::Vertical)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
-            .split(frame.area());
-        let layout_horizontal = Layout::default()
-            .direction(Direction::Horizontal)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
-            .split(layout_vert[1]);
-        let input_area = layout_horizontal[1];
+        let input_area = self.create_layout(40, 16, frame);
 
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
@@ -374,17 +348,7 @@ impl Tuipe {
 
     // Renders the language selector screen
     fn render_language_selector(&mut self, frame: &mut Frame) {
-        let layout_vert = Layout::default()
-            .direction(Direction::Vertical)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
-            .split(frame.area());
-        let layout_horizontal = Layout::default()
-            .direction(Direction::Horizontal)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
-            .split(layout_vert[1]);
-        let input_area = layout_horizontal[1];
+        let input_area = self.create_layout(40, 16, frame);
 
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
@@ -445,17 +409,7 @@ impl Tuipe {
 
     // Renders the end screen
     fn render_endscreen(&mut self, frame: &mut Frame) {
-        let layout_vert = Layout::default()
-            .direction(Direction::Vertical)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(15), Constraint::Min(0)])
-            .split(frame.area());
-        let layout_horizontal = Layout::default()
-            .direction(Direction::Horizontal)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
-            .split(layout_vert[1]);
-        let input_area = layout_horizontal[1];
+        let input_area = self.create_layout(40, 15, frame);
 
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
