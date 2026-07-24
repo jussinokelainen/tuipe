@@ -6,25 +6,29 @@ use crossterm::event::{self, KeyEventKind};
 use rand::rng;
 use rand::seq::IndexedRandom;
 use ratatui::DefaultTerminal;
-use std::fs;
+use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::{env, fs};
 use structs::{Difficulty, FinalStats, State, Test};
 pub use structs::{Language, MainMenu, TestType};
 
+// Returns a vector containing the words for the typing test
+// Takes the test language and the test type as parameters
 fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String> {
     // Get directory for word files at compile time from the DATADIR argument,
     // or use /usr/share/tuipe as default fallback
-    const DATA_DIR: &str = match option_env!("DATADIR") {
+    const DATADIR: &str = match option_env!("DATADIR") {
         Some(path) => path,
         None => "/usr/share/tuipe",
     };
+
     let count = TestType::word_count(&test_type);
     let wordfile = match language {
-        Language::English => DATA_DIR.to_string() + "/languages/english.json",
-        Language::English1k => DATA_DIR.to_string() + "/languages/english_1k.json",
-        Language::English5k => DATA_DIR.to_string() + "/languages/english_5k.json",
-        Language::English10k => DATA_DIR.to_string() + "/languages/english_10k.json",
-        Language::English25k => DATA_DIR.to_string() + "/languages/english_25k.json",
+        Language::English => DATADIR.to_string() + "/languages/english.json",
+        Language::English1k => DATADIR.to_string() + "/languages/english_1k.json",
+        Language::English5k => DATADIR.to_string() + "/languages/english_5k.json",
+        Language::English10k => DATADIR.to_string() + "/languages/english_10k.json",
+        Language::English25k => DATADIR.to_string() + "/languages/english_25k.json",
     };
 
     let data = fs::read_to_string(wordfile).expect("Failed to read file");
@@ -47,12 +51,44 @@ fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String>
     words
 }
 
+// Returns the current time since the epoch in milliseconds
 fn get_current_time_as_millis() -> u128 {
     let time_now = SystemTime::now();
     let current_time = time_now
         .duration_since(UNIX_EPOCH)
         .expect("time should go forward");
     current_time.as_millis()
+}
+
+// Returns the filepath of the local results database
+fn db_path() -> PathBuf {
+    let path = PathBuf::from(env::var("HOME").expect("$HOME not set"))
+        .join(".local/share/tuipe/results.db");
+    path
+}
+
+// Create the database table if it doesn't exist
+// returns true if the table already existed or it was successfully created
+fn database_exists() -> bool {
+    let db_path = db_path();
+    let table_create_query = "
+            CREATE TABLE IF NOT EXISTS results(
+                wpm REAL,
+                raw_wpm REAL,
+                accuracy REAL,
+                test_type TEXT,
+                language TEXT,
+                characters_typed INTEGER,
+                time INTEGER
+            );";
+    let connection = sqlite::open(db_path).ok();
+    match connection {
+        Some(connection) => {
+            let res = connection.execute(table_create_query);
+            if res.is_ok() { true } else { false }
+        }
+        None => false,
+    }
 }
 
 pub struct Tuipe {
@@ -82,7 +118,10 @@ impl Tuipe {
                 None => "UNKNOWN",
             },
             state: State::MainMenu,
-            should_exit: false,
+            // This is a weird way to do this but it should work fine,
+            // since if creating the database fails i want the program
+            // to exit atleast for now, maybe later this will change
+            should_exit: !database_exists(),
             language: Language::English,
 
             menu_selection: 0,

@@ -19,6 +19,7 @@ $(BIN): $(RS_FILES) Cargo.lock Cargo.toml
 	@printf "[\033[32m OK \033[0m] Build complete\n"
 
 run:
+	@mkdir -p $$HOME/.local/share/tuipe
 	@cargo run
 
 install: $(BIN)
@@ -32,6 +33,7 @@ install: $(BIN)
 		install -m644 "$$file" $(DATADIR)/"$$file"; \
 		echo "install -m644 $$file $(DATADIR)/$$file"; \
 	done
+	@mkdir -p $$HOME/.local/share/tuipe
 	@printf "[\033[32m OK \033[0m] Installation complete\n"
 
 uninstall:
