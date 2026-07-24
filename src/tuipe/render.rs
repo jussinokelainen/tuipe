@@ -236,7 +236,20 @@ impl Tuipe {
         let mut lines: Vec<Line<'static>> = Vec::new();
         let stats_res = self.get_stats_from_db();
         match stats_res {
-            Ok(v) => {
+            Ok(results) => {
+                let tests_count = results.len();
+                let mut total_wpm = 0.0;
+                let mut total_wpm_raw = 0.0;
+                let mut total_acc = 0.0;
+                for result in &results {
+                    total_wpm += result.wpm;
+                    total_wpm_raw += result.raw_wpm;
+                    total_acc += result.accuracy;
+                }
+                let avg_wpm = ((total_wpm / tests_count as f64) * 10.0).round() / 10.0;
+                let avg_wpm_raw = ((total_wpm_raw / tests_count as f64) * 10.0).round() / 10.0;
+                let avg_acc = ((total_acc / tests_count as f64) * 1000.0).round() / 10.0;
+
                 lines.push(Line::from(Span::styled(
                     "Your stats:",
                     Style::default().fg(Color::Cyan),
@@ -244,7 +257,16 @@ impl Tuipe {
                 lines.push(Line::from(Span::raw("")));
                 lines.push(Line::from(Span::raw(format!(
                     "Tests completed: {}",
-                    v.len()
+                    tests_count
+                ))));
+                lines.push(Line::from(Span::raw(format!("Average wpm: {}", avg_wpm))));
+                lines.push(Line::from(Span::raw(format!(
+                    "Average raw wpm: {}",
+                    avg_wpm_raw
+                ))));
+                lines.push(Line::from(Span::raw(format!(
+                    "Average accuracy: {}%",
+                    avg_acc
                 ))));
             }
             Err(e) => {
