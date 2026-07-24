@@ -1,3 +1,4 @@
+mod database;
 mod input;
 mod render;
 mod structs;
