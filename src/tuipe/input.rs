@@ -7,12 +7,42 @@ impl Tuipe {
         self.test.start_time = get_current_time_as_millis()
     }
 
+    // Save the test results into the database
+    fn save_to_db(&self) -> bool {
+        // results(wpm REAL, raw_wpm REAL, accuracy REAL, test_type TEXT, language TEXT, characters_typed INTEGER, time INTEGER)
+        let db_path = db_path();
+        let sql_statement = format!(
+            "
+            INSERT INTO
+                results(wpm, raw_wpm, accuracy, test_type, language, characters_typed, time)
+                VALUES ({}, {}, {}, '{}', '{}', {}, {});",
+            self.stats.wpm,
+            self.stats.wpm_raw,
+            self.stats.accuracy,
+            TestType::as_string(&self.test.ttype),
+            Language::as_string(&self.language),
+            self.stats.typed_characters,
+            self.stats.time
+        );
+        let connection = sqlite::open(db_path).ok();
+        // CLDL-ENTRY: title: error handling, priority: 5, tag: db
+        match connection {
+            Some(connection) => {
+                let res = connection.execute(sql_statement);
+                if res.is_ok() { true } else { false }
+            }
+            None => false,
+        }
+    }
+
+    // Sets the test results into the stats struct and saves the results
+    // into the database
     pub fn set_final_stats(&mut self) {
-        // Calculate time
+        // Calculate and set time
         self.stats.time = (get_current_time_as_millis() - self.test.start_time) as f64;
         self.stats.time_is_set = true;
 
-        // Calculate wpm
+        // Calculate and set wpm
         let mut correct_characters = 0;
         let mut raw_extra_chars = 0;
         let mut typed_words = 0;
@@ -48,34 +78,10 @@ impl Tuipe {
         self.stats.typed_characters = correct_characters;
         self.stats.accuracy = self.test.correct_chars as f64
             / (self.test.correct_chars + self.test.incorrect_chars) as f64;
-
-        // Save the test results into the database
-        // results(wpm REAL, raw_wpm REAL, accuracy REAL, test_type TEXT, language TEXT, characters_typed INTEGER, time INTEGER)
-        let db_path = db_path();
-        let sql_statement = format!(
-            "
-            INSERT INTO
-                results(wpm, raw_wpm, accuracy, test_type, language, characters_typed, time)
-                VALUES ({}, {}, {}, '{}', '{}', {}, {});",
-            self.stats.wpm,
-            self.stats.wpm_raw,
-            self.stats.accuracy,
-            TestType::as_string(&self.test.ttype),
-            Language::as_string(&self.language),
-            self.stats.typed_characters,
-            self.stats.time
-        );
-        let connection = sqlite::open(db_path).ok();
-        // CLDL-ENTRY: title: error handling, priority: 5, tag: db
-        let _success = match connection {
-            Some(connection) => {
-                let res = connection.execute(sql_statement);
-                if res.is_ok() { true } else { false }
-            }
-            None => false,
-        };
+        self.save_to_db();
     }
 
+    // Enter a new character
     fn enter_char(&mut self, new_char: char) {
         if !self.test.is_started {
             self.test.is_started = true;
@@ -105,6 +111,7 @@ impl Tuipe {
         self.character_index += 1;
     }
 
+    // Add a new word
     fn add_word(&mut self) {
         let w_idx = self.word_index;
         if self.words[w_idx].len() > self.input[w_idx].len() {
@@ -123,6 +130,8 @@ impl Tuipe {
         self.input_buffer.push(0);
     }
 
+    // Delete a character. Handles going back words if deleting characters at
+    // the start of a word
     fn delete_char(&mut self) {
         if self.character_index == 0 {
             // We are at the first character of a word, go back a word if possible
@@ -151,6 +160,7 @@ impl Tuipe {
         }
     }
 
+    // Input controls for the main menu
     pub fn main_menu_input(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
@@ -173,6 +183,7 @@ impl Tuipe {
         }
     }
 
+    // Input controls for the difficulty selector
     pub fn difficulty_selector_input(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
@@ -193,6 +204,7 @@ impl Tuipe {
         }
     }
 
+    // Input controls for the test type selector
     pub fn test_type_selector_input(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
@@ -212,6 +224,7 @@ impl Tuipe {
         }
     }
 
+    // Input controls for the language selector
     pub fn language_selector_input(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
@@ -231,6 +244,7 @@ impl Tuipe {
         }
     }
 
+    // Input controls for the test end screen
     pub fn end_screen_input(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Tab => self.restart_test(),
@@ -240,6 +254,7 @@ impl Tuipe {
         }
     }
 
+    // Input controls during the test
     pub fn typing_test_input(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char(' ') => self.add_word(),

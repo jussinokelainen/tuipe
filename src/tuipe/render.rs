@@ -7,6 +7,8 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Paragraph};
 
 impl Tuipe {
+    // Creates a vector of lines containing the words of the test that need
+    // to be drawn on the screen with their correct colors
     fn create_test_lines(&mut self, width: u16) -> (Vec<Line<'_>>, (u16, u16)) {
         let mut lines: Vec<Line<'_>> = Vec::new();
         let mut current_line: Vec<Span<'_>> = Vec::new();
@@ -108,6 +110,7 @@ impl Tuipe {
         (lines, (cursor_row, cursor_col))
     }
 
+    // Renders the typing test screen
     fn render_test(&mut self, frame: &mut Frame) {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
@@ -143,6 +146,248 @@ impl Tuipe {
         ));
     }
 
+    // Renders the main menu
+    fn render_main_menu(&mut self, frame: &mut Frame) {
+        let layout_vert = Layout::default()
+            .direction(Direction::Vertical)
+            .flex(Flex::Center)
+            .constraints([Constraint::Min(0), Constraint::Max(18), Constraint::Min(0)])
+            .split(frame.area());
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .flex(Flex::Center)
+            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
+            .split(layout_vert[1]);
+        let input_area = layout_horizontal[1];
+
+        let mut lines: Vec<Line<'static>> = Vec::new();
+        lines.push(Line::from(Span::styled(
+            "Tuipe",
+            Style::default().fg(Color::Magenta),
+        )));
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::styled(
+            "Current settings:",
+            Style::default().fg(Color::Cyan),
+        )));
+        let ttype = TestType::as_string(&self.test.ttype);
+        lines.push(Line::from(Span::styled(
+            format!("Test type: {ttype}"),
+            Style::default().fg(Color::LightCyan),
+        )));
+        let lang = Language::as_string(&self.language);
+        lines.push(Line::from(Span::styled(
+            format!("Language: {lang}"),
+            Style::default().fg(Color::LightCyan),
+        )));
+        let difficulty = Difficulty::as_string(&self.test.difficulty);
+        lines.push(Line::from(Span::styled(
+            format!("Difficulty: {difficulty}"),
+            Style::default().fg(Color::LightCyan),
+        )));
+        lines.push(Line::from(Span::raw("")));
+
+        let options = [
+            "Start test",
+            "Select test type",
+            "Select language",
+            "Select difficulty",
+        ];
+        for (i, name) in options.iter().enumerate() {
+            let style = if i == self.menu_selection {
+                Style::default().fg(Color::Blue)
+            } else {
+                Style::default()
+            };
+            let label = if i == self.menu_selection {
+                format!("> {name}")
+            } else {
+                format!("{name}")
+            };
+            lines.push(Line::from(Span::styled(label, style)));
+        }
+
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
+        self.add_menu_controls(&mut lines);
+        // Print the program version at the bottom
+        lines.push(Line::from(Span::styled("", Style::default())));
+        lines.push(Line::from(Span::styled(
+            format!("version: {}", self.version),
+            Style::default().fg(Color::DarkGray),
+        )));
+
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .centered()
+            .block(Block::new());
+        frame.render_widget(input, input_area);
+    }
+
+    // Renders the difficulty selector screen
+    fn render_difficulty_selector(&mut self, frame: &mut Frame) {
+        let layout_vert = Layout::default()
+            .direction(Direction::Vertical)
+            .flex(Flex::Center)
+            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
+            .split(frame.area());
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .flex(Flex::Center)
+            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
+            .split(layout_vert[1]);
+        let input_area = layout_horizontal[1];
+
+        let mut lines: Vec<Line<'static>> = Vec::new();
+        lines.push(Line::from(Span::styled(
+            "Available difficulties:",
+            Style::default().fg(Color::Green),
+        )));
+        lines.push(Line::from(Span::raw("")));
+
+        for (i, name) in Difficulty::as_vec().iter().enumerate() {
+            let style = if i == self.menu_selection {
+                Style::default().fg(Color::Blue)
+            } else {
+                Style::default()
+            };
+            let label = if i == self.menu_selection {
+                format!("> {name}")
+            } else {
+                format!("{name}")
+            };
+            lines.push(Line::from(Span::styled(label, style)));
+        }
+
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
+        self.add_select_menu_controls(&mut lines);
+
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .centered()
+            .block(Block::new());
+        frame.render_widget(input, input_area);
+    }
+
+    // Renders the test type selector screen
+    fn render_test_type_selector(&mut self, frame: &mut Frame) {
+        let layout_vert = Layout::default()
+            .direction(Direction::Vertical)
+            .flex(Flex::Center)
+            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
+            .split(frame.area());
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .flex(Flex::Center)
+            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
+            .split(layout_vert[1]);
+        let input_area = layout_horizontal[1];
+
+        let mut lines: Vec<Line<'static>> = Vec::new();
+        lines.push(Line::from(Span::styled(
+            "Available tests:",
+            Style::default().fg(Color::Green),
+        )));
+        lines.push(Line::from(Span::raw("")));
+
+        for (i, name) in TestType::as_vec().iter().enumerate() {
+            let style = if i == self.menu_selection {
+                Style::default().fg(Color::Blue)
+            } else {
+                Style::default()
+            };
+            let label = if i == self.menu_selection {
+                format!("> {name}")
+            } else {
+                format!("{name}")
+            };
+            lines.push(Line::from(Span::styled(label, style)));
+        }
+
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
+        self.add_select_menu_controls(&mut lines);
+
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .centered()
+            .block(Block::new());
+        frame.render_widget(input, input_area);
+    }
+
+    // Renders the language selector screen
+    fn render_language_selector(&mut self, frame: &mut Frame) {
+        let layout_vert = Layout::default()
+            .direction(Direction::Vertical)
+            .flex(Flex::Center)
+            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
+            .split(frame.area());
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .flex(Flex::Center)
+            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
+            .split(layout_vert[1]);
+        let input_area = layout_horizontal[1];
+
+        let mut lines: Vec<Line<'static>> = Vec::new();
+        lines.push(Line::from(Span::styled(
+            "Available languages:",
+            Style::default().fg(Color::Green),
+        )));
+        lines.push(Line::from(Span::raw("")));
+
+        for (i, name) in Language::as_vec().iter().enumerate() {
+            let style = if i == self.menu_selection {
+                Style::default().fg(Color::Blue)
+            } else {
+                Style::default()
+            };
+            let label = if i == self.menu_selection {
+                format!("> {name}")
+            } else {
+                format!("{name}")
+            };
+            lines.push(Line::from(Span::styled(label, style)));
+        }
+
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
+        self.add_select_menu_controls(&mut lines);
+
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .centered()
+            .block(Block::new());
+        frame.render_widget(input, input_area);
+    }
+
+    // Adds the main menu controls as dark gray to the lines vector
+    fn add_menu_controls(&self, lines: &mut Vec<Line<'static>>) {
+        lines.push(Line::from(Span::styled(
+            "Move: j/k",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Select: Enter",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Quit: q",
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    // Adds the control info for the option menus as dark gray to given lines vector
+    fn add_select_menu_controls(&self, lines: &mut Vec<Line<'static>>) {
+        self.add_menu_controls(lines);
+        lines.push(Line::from(Span::styled(
+            "Back: Esc",
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    // Renders the end screen
     fn render_endscreen(&mut self, frame: &mut Frame) {
         let layout_vert = Layout::default()
             .direction(Direction::Vertical)
@@ -212,274 +457,7 @@ impl Tuipe {
         frame.render_widget(input, input_area);
     }
 
-    fn render_difficulty_selector(&mut self, frame: &mut Frame) {
-        let layout_vert = Layout::default()
-            .direction(Direction::Vertical)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
-            .split(frame.area());
-        let layout_horizontal = Layout::default()
-            .direction(Direction::Horizontal)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
-            .split(layout_vert[1]);
-        let input_area = layout_horizontal[1];
-
-        let mut lines: Vec<Line<'static>> = Vec::new();
-        lines.push(Line::from(Span::styled(
-            "Available difficulties:",
-            Style::default().fg(Color::Green),
-        )));
-        lines.push(Line::from(Span::raw("")));
-
-        for (i, name) in Difficulty::as_vec().iter().enumerate() {
-            let style = if i == self.menu_selection {
-                Style::default().fg(Color::Blue)
-            } else {
-                Style::default()
-            };
-            let label = if i == self.menu_selection {
-                format!("> {name}")
-            } else {
-                format!("{name}")
-            };
-            lines.push(Line::from(Span::styled(label, style)));
-        }
-
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::styled(
-            "Move: j/k",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Select: Enter",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Quit: q",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Back: Esc",
-            Style::default().fg(Color::DarkGray),
-        )));
-
-        let input = Paragraph::new(lines)
-            .style(Style::default())
-            .centered()
-            .block(Block::new());
-        frame.render_widget(input, input_area);
-    }
-
-    fn render_test_type_selector(&mut self, frame: &mut Frame) {
-        let layout_vert = Layout::default()
-            .direction(Direction::Vertical)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
-            .split(frame.area());
-        let layout_horizontal = Layout::default()
-            .direction(Direction::Horizontal)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
-            .split(layout_vert[1]);
-        let input_area = layout_horizontal[1];
-
-        let mut lines: Vec<Line<'static>> = Vec::new();
-        lines.push(Line::from(Span::styled(
-            "Available tests:",
-            Style::default().fg(Color::Green),
-        )));
-        lines.push(Line::from(Span::raw("")));
-
-        for (i, name) in TestType::as_vec().iter().enumerate() {
-            let style = if i == self.menu_selection {
-                Style::default().fg(Color::Blue)
-            } else {
-                Style::default()
-            };
-            let label = if i == self.menu_selection {
-                format!("> {name}")
-            } else {
-                format!("{name}")
-            };
-            lines.push(Line::from(Span::styled(label, style)));
-        }
-
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::styled(
-            "Move: j/k",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Select: Enter",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Quit: q",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Back: Esc",
-            Style::default().fg(Color::DarkGray),
-        )));
-
-        let input = Paragraph::new(lines)
-            .style(Style::default())
-            .centered()
-            .block(Block::new());
-        frame.render_widget(input, input_area);
-    }
-
-    fn render_language_selector(&mut self, frame: &mut Frame) {
-        let layout_vert = Layout::default()
-            .direction(Direction::Vertical)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(16), Constraint::Min(0)])
-            .split(frame.area());
-        let layout_horizontal = Layout::default()
-            .direction(Direction::Horizontal)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
-            .split(layout_vert[1]);
-        let input_area = layout_horizontal[1];
-
-        let mut lines: Vec<Line<'static>> = Vec::new();
-        lines.push(Line::from(Span::styled(
-            "Available languages:",
-            Style::default().fg(Color::Green),
-        )));
-        lines.push(Line::from(Span::raw("")));
-
-        for (i, name) in Language::as_vec().iter().enumerate() {
-            let style = if i == self.menu_selection {
-                Style::default().fg(Color::Blue)
-            } else {
-                Style::default()
-            };
-            let label = if i == self.menu_selection {
-                format!("> {name}")
-            } else {
-                format!("{name}")
-            };
-            lines.push(Line::from(Span::styled(label, style)));
-        }
-
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::styled(
-            "Move: j/k",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Select: Enter",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Quit: q",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Back: Esc",
-            Style::default().fg(Color::DarkGray),
-        )));
-
-        let input = Paragraph::new(lines)
-            .style(Style::default())
-            .centered()
-            .block(Block::new());
-        frame.render_widget(input, input_area);
-    }
-
-    fn render_main_menu(&mut self, frame: &mut Frame) {
-        let layout_vert = Layout::default()
-            .direction(Direction::Vertical)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(18), Constraint::Min(0)])
-            .split(frame.area());
-        let layout_horizontal = Layout::default()
-            .direction(Direction::Horizontal)
-            .flex(Flex::Center)
-            .constraints([Constraint::Min(0), Constraint::Max(40), Constraint::Min(0)])
-            .split(layout_vert[1]);
-        let input_area = layout_horizontal[1];
-
-        let mut lines: Vec<Line<'static>> = Vec::new();
-        lines.push(Line::from(Span::styled(
-            "Tuipe",
-            Style::default().fg(Color::Magenta),
-        )));
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::styled(
-            "Current settings:",
-            Style::default().fg(Color::Cyan),
-        )));
-        let ttype = TestType::as_string(&self.test.ttype);
-        lines.push(Line::from(Span::styled(
-            format!("Test type: {ttype}"),
-            Style::default().fg(Color::LightCyan),
-        )));
-        let lang = Language::as_string(&self.language);
-        lines.push(Line::from(Span::styled(
-            format!("Language: {lang}"),
-            Style::default().fg(Color::LightCyan),
-        )));
-        let difficulty = Difficulty::as_string(&self.test.difficulty);
-        lines.push(Line::from(Span::styled(
-            format!("Difficulty: {difficulty}"),
-            Style::default().fg(Color::LightCyan),
-        )));
-        lines.push(Line::from(Span::raw("")));
-
-        let options = [
-            "Start test",
-            "Select test type",
-            "Select language",
-            "Select difficulty",
-        ];
-        for (i, name) in options.iter().enumerate() {
-            let style = if i == self.menu_selection {
-                Style::default().fg(Color::Blue)
-            } else {
-                Style::default()
-            };
-            let label = if i == self.menu_selection {
-                format!("> {name}")
-            } else {
-                format!("{name}")
-            };
-            lines.push(Line::from(Span::styled(label, style)));
-        }
-
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::styled(
-            "Move: j/k",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Select: Enter",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Quit: q",
-            Style::default().fg(Color::DarkGray),
-        )));
-        // Print the program version at the bottom
-        lines.push(Line::from(Span::styled("", Style::default())));
-        lines.push(Line::from(Span::styled(
-            format!("version: {}", self.version),
-            Style::default().fg(Color::DarkGray),
-        )));
-
-        let input = Paragraph::new(lines)
-            .style(Style::default())
-            .centered()
-            .block(Block::new());
-        frame.render_widget(input, input_area);
-    }
-
+    // The main render function of the program
     pub fn render(&mut self, frame: &mut Frame) {
         // check if test done instead of self.words == self.input
         if !self.stats.time_is_set && self.check_is_test_done() {

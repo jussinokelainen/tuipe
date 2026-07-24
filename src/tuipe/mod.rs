@@ -138,6 +138,7 @@ impl Tuipe {
         }
     }
 
+    // Reset all required data fields for a new game
     fn restart_test(&mut self) {
         self.state = State::Typing;
 
@@ -157,6 +158,9 @@ impl Tuipe {
         self.words = get_words_as_vector(&self.language, &self.test.ttype);
     }
 
+    // Checks whether the test is over, by either the time being up in a timed
+    // test, or in a normal words test typing the last word correct or entering
+    // a new word after the last word (pressing space during the last word)
     fn check_is_test_done(&self) -> bool {
         let words_len = self.words.len();
 
@@ -174,6 +178,7 @@ impl Tuipe {
             }
         }
 
+        // Check if the time is up if typing a timed test
         if self.test.is_timed && self.test.is_started {
             let elapsed_test_time = (get_current_time_as_millis() - self.test.start_time) as f64;
             // Divide elapsed time by 1000 to convert it from milliseconds to seconds
