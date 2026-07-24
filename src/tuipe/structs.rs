@@ -48,6 +48,30 @@ impl FinalStats {
     }
 }
 
+pub struct DBdata {
+    pub wpm: f64,
+    pub raw_wpm: f64,
+    pub accuracy: f64,
+    pub test_type: String,
+    pub language: String,
+    pub characters_typed: u16,
+    pub time: u128,
+}
+
+impl DBdata {
+    pub fn new() -> Self {
+        Self {
+            wpm: 0.0,
+            raw_wpm: 0.0,
+            accuracy: 0.0,
+            test_type: String::new(),
+            language: String::new(),
+            characters_typed: 0,
+            time: 0,
+        }
+    }
+}
+
 pub enum State {
     MainMenu,
     LanguageSelector,
