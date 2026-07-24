@@ -409,7 +409,7 @@ impl Tuipe {
 
     // Renders the end screen
     fn render_endscreen(&mut self, frame: &mut Frame) {
-        let input_area = self.create_layout(40, 15, frame);
+        let input_area = self.create_layout(40, 16, frame);
 
         let mut lines: Vec<Line<'static>> = Vec::new();
         lines.push(Line::from(Span::styled(
@@ -445,6 +445,18 @@ impl Tuipe {
             "Words: {}",
             self.stats.typed_words
         ))));
+
+        lines.push(Line::from(Span::raw("")));
+        match self.save_success {
+            Ok(_) => lines.push(Line::from(Span::styled(
+                "Results saved successfully!",
+                Style::default().fg(Color::Green),
+            ))),
+            Err(_) => lines.push(Line::from(Span::styled(
+                "Failed to save results",
+                Style::default().fg(Color::Red),
+            ))),
+        }
 
         lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::raw("")));

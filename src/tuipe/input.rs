@@ -50,7 +50,7 @@ impl Tuipe {
         self.stats.typed_characters = correct_characters;
         self.stats.accuracy = self.test.correct_chars as f64
             / (self.test.correct_chars + self.test.incorrect_chars) as f64;
-        self.save_to_db();
+        self.save_success = self.save_to_db();
     }
 
     // Enter a new character

@@ -97,6 +97,7 @@ pub struct Tuipe {
     state: State,
     should_exit: bool,
     language: Language,
+    save_success: Result<(), sqlite::Error>,
 
     menu_selection: usize,
 
@@ -124,6 +125,7 @@ impl Tuipe {
             // to exit atleast for now, maybe later this will change
             should_exit: !database_exists(),
             language: Language::English,
+            save_success: Ok(()),
 
             menu_selection: 0,
 
@@ -142,6 +144,7 @@ impl Tuipe {
     // Reset all required data fields for a new game
     fn restart_test(&mut self) {
         self.state = State::Typing;
+        self.save_success = Ok(());
 
         (self.test.is_timed, self.test.time_limit) = TestType::is_timed(&self.test.ttype);
         self.test.is_started = false;
