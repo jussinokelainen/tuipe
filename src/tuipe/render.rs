@@ -252,7 +252,7 @@ impl Tuipe {
                     "Error:",
                     Style::default().fg(Color::Red),
                 )));
-                lines.push(Line::from(Span::raw(e)));
+                lines.push(Line::from(Span::raw(e.to_string())));
             }
         }
 

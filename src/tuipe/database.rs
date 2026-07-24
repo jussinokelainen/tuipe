@@ -33,7 +33,7 @@ impl Tuipe {
 
     // Get stats for all saved test results in the database
     // Returns all stats as Vec<DBdata>, or an error if there was an error
-    pub fn get_stats_from_db(&self) -> Result<Vec<DBdata>, &'static str> {
+    pub fn get_stats_from_db(&self) -> Result<Vec<DBdata>, sqlite::Error> {
         let db_path = db_path();
         let sql_statement = "
             SELECT
@@ -47,27 +47,26 @@ impl Tuipe {
             FROM
                 results
             ;";
-        let connection = sqlite::open(db_path).ok();
-        match connection {
-            Some(connection) => {
-                let mut out_vec = Vec::new();
-                // CLDL-ENTRY: title: unwraps, priority: 18, tag: db
-                let mut statement = connection.prepare(sql_statement).unwrap();
-                while let Ok(State::Row) = statement.next() {
+        let connection = sqlite::open(db_path)?;
+        let mut out_vec = Vec::new();
+        let mut statement = connection.prepare(sql_statement)?;
+        loop {
+            match statement.next()? {
+                State::Row => {
                     let mut data = DBdata::new();
-                    data.wpm = statement.read::<f64, _>("wpm").unwrap();
-                    data.raw_wpm = statement.read::<f64, _>("raw_wpm").unwrap();
-                    data.accuracy = statement.read::<f64, _>("accuracy").unwrap();
-                    data.test_type = statement.read::<String, _>("test_type").unwrap();
-                    data.language = statement.read::<String, _>("language").unwrap();
-                    data.characters_typed =
-                        statement.read::<i64, _>("characters_typed").unwrap() as u16;
-                    data.time = statement.read::<i64, _>("time").unwrap() as u128;
+                    data.wpm = statement.read::<f64, _>("wpm")?;
+                    data.raw_wpm = statement.read::<f64, _>("raw_wpm")?;
+                    data.accuracy = statement.read::<f64, _>("accuracy")?;
+                    data.test_type = statement.read::<String, _>("test_type")?;
+                    data.language = statement.read::<String, _>("language")?;
+                    data.characters_typed = statement.read::<i64, _>("characters_typed")? as u16;
+                    data.time = statement.read::<i64, _>("time")? as u128;
                     out_vec.push(data);
                 }
-                Ok(out_vec)
+                State::Done => break,
             }
-            None => Err("Could not open database connection"),
         }
+
+        Ok(out_vec)
     }
 }
