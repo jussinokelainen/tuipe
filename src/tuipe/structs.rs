@@ -78,7 +78,8 @@ pub enum State {
     LanguageSelector,
     TestTypeSelector,
     DifficultySelector,
-    EndScreen,
+    TestFinished,
+    TestInterrupted,
     Typing,
 }
 

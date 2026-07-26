@@ -210,7 +210,8 @@ impl Tuipe {
                     State::LanguageSelector => self.language_selector_input(key.code),
                     State::DifficultySelector => self.difficulty_selector_input(key.code),
                     State::MainMenu => self.main_menu_input(key.code),
-                    State::EndScreen => self.end_screen_input(key.code),
+                    State::TestFinished => self.end_screen_input(key.code),
+                    State::TestInterrupted => self.end_screen_input(key.code),
                     State::Typing if key.kind == KeyEventKind::Press => {
                         self.typing_test_input(key.code)
                     }

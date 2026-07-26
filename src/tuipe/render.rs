@@ -506,7 +506,7 @@ impl Tuipe {
         // check if test done instead of self.words == self.input
         if !self.stats.time_is_set && self.check_is_test_done() {
             self.set_final_stats();
-            self.state = State::EndScreen;
+            self.state = State::TestFinished;
         }
 
         match self.state {
@@ -516,7 +516,8 @@ impl Tuipe {
             State::TestTypeSelector => self.render_test_type_selector(frame),
             State::DifficultySelector => self.render_difficulty_selector(frame),
             State::Typing => self.render_test(frame),
-            State::EndScreen => self.render_endscreen(frame),
+            State::TestFinished => self.render_endscreen(frame),
+            State::TestInterrupted => self.render_endscreen(frame),
         }
     }
 }
