@@ -164,7 +164,7 @@ impl Tuipe {
     fn render_main_menu(&mut self, frame: &mut Frame) {
         let input_area = self.create_layout(40, 18, frame);
 
-        let mut lines: Vec<Line<'static>> = Vec::new();
+        let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
             "Tuipe",
             Style::default().fg(Color::Magenta),
@@ -231,7 +231,7 @@ impl Tuipe {
     fn render_stats_screen(&mut self, frame: &mut Frame) {
         let input_area = self.create_layout(40, 16, frame);
 
-        let mut lines: Vec<Line<'static>> = Vec::new();
+        let mut lines: Vec<Line<'_>> = Vec::new();
         let stats_res = self.get_stats_from_db();
         match stats_res {
             Ok(results) => {
@@ -298,7 +298,7 @@ impl Tuipe {
     fn render_difficulty_selector(&mut self, frame: &mut Frame) {
         let input_area = self.create_layout(40, 16, frame);
 
-        let mut lines: Vec<Line<'static>> = Vec::new();
+        let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
             "Available difficulties:",
             Style::default().fg(Color::Green),
@@ -332,7 +332,7 @@ impl Tuipe {
     fn render_test_type_selector(&mut self, frame: &mut Frame) {
         let input_area = self.create_layout(40, 16, frame);
 
-        let mut lines: Vec<Line<'static>> = Vec::new();
+        let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
             "Available tests:",
             Style::default().fg(Color::Green),
@@ -366,7 +366,7 @@ impl Tuipe {
     fn render_language_selector(&mut self, frame: &mut Frame) {
         let input_area = self.create_layout(40, 16, frame);
 
-        let mut lines: Vec<Line<'static>> = Vec::new();
+        let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
             "Available languages:",
             Style::default().fg(Color::Green),
@@ -397,7 +397,7 @@ impl Tuipe {
     }
 
     // Adds the main menu controls as dark gray to the lines vector
-    fn add_menu_controls(&self, lines: &mut Vec<Line<'static>>) {
+    fn add_menu_controls(&self, lines: &mut Vec<Line<'_>>) {
         lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::styled(
@@ -415,7 +415,7 @@ impl Tuipe {
     }
 
     // Adds the control info for the option menus as dark gray to given lines vector
-    fn add_select_menu_controls(&self, lines: &mut Vec<Line<'static>>) {
+    fn add_select_menu_controls(&self, lines: &mut Vec<Line<'_>>) {
         self.add_menu_controls(lines);
         lines.push(Line::from(Span::styled(
             "Back: Esc",
@@ -428,7 +428,7 @@ impl Tuipe {
         self.set_final_stats(false);
         let input_area = self.create_layout(40, 16, frame);
 
-        let mut lines: Vec<Line<'static>> = Vec::new();
+        let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
             format!("Test failed: {}", TestType::as_string(&self.test.ttype)),
             Style::default().fg(Color::Red),
@@ -476,7 +476,7 @@ impl Tuipe {
     fn render_test_finished(&mut self, frame: &mut Frame) {
         let input_area = self.create_layout(40, 16, frame);
 
-        let mut lines: Vec<Line<'static>> = Vec::new();
+        let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
             format!("Test done: {}", TestType::as_string(&self.test.ttype)),
             Style::default().fg(Color::Green),
@@ -533,7 +533,7 @@ impl Tuipe {
     }
 
     // Adds the end screen controls as dark gray to the lines vector
-    fn add_endscreen_controls(&self, lines: &mut Vec<Line<'static>>) {
+    fn add_endscreen_controls(&self, lines: &mut Vec<Line<'_>>) {
         lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::styled(
