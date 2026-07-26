@@ -212,8 +212,6 @@ impl Tuipe {
             lines.push(Line::from(Span::styled(label, style)));
         }
 
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::raw("")));
         self.add_menu_controls(&mut lines);
         // Print the program version at the bottom
         lines.push(Line::from(Span::styled("", Style::default())));
@@ -321,8 +319,6 @@ impl Tuipe {
             lines.push(Line::from(Span::styled(label, style)));
         }
 
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::raw("")));
         self.add_select_menu_controls(&mut lines);
 
         let input = Paragraph::new(lines)
@@ -357,8 +353,6 @@ impl Tuipe {
             lines.push(Line::from(Span::styled(label, style)));
         }
 
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::raw("")));
         self.add_select_menu_controls(&mut lines);
 
         let input = Paragraph::new(lines)
@@ -393,8 +387,6 @@ impl Tuipe {
             lines.push(Line::from(Span::styled(label, style)));
         }
 
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::raw("")));
         self.add_select_menu_controls(&mut lines);
 
         let input = Paragraph::new(lines)
@@ -406,6 +398,8 @@ impl Tuipe {
 
     // Adds the main menu controls as dark gray to the lines vector
     fn add_menu_controls(&self, lines: &mut Vec<Line<'static>>) {
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::styled(
             "Move: j/k",
             Style::default().fg(Color::DarkGray),
@@ -469,20 +463,8 @@ impl Tuipe {
             self.stats.typed_words
         ))));
 
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::styled(
-            "Restart test: Tab",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Back to main menu: Esc",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Quit: q",
-            Style::default().fg(Color::DarkGray),
-        )));
+        self.add_endscreen_controls(&mut lines);
+
         let input = Paragraph::new(lines)
             .style(Style::default())
             .centered()
@@ -541,6 +523,17 @@ impl Tuipe {
             ))),
         }
 
+        self.add_endscreen_controls(&mut lines);
+
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .centered()
+            .block(Block::new());
+        frame.render_widget(input, input_area);
+    }
+
+    // Adds the end screen controls as dark gray to the lines vector
+    fn add_endscreen_controls(&self, lines: &mut Vec<Line<'static>>) {
         lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::raw("")));
         lines.push(Line::from(Span::styled(
@@ -555,11 +548,6 @@ impl Tuipe {
             "Quit: q",
             Style::default().fg(Color::DarkGray),
         )));
-        let input = Paragraph::new(lines)
-            .style(Style::default())
-            .centered()
-            .block(Block::new());
-        frame.render_widget(input, input_area);
     }
 
     // The main render function of the program
