@@ -429,8 +429,69 @@ impl Tuipe {
         )));
     }
 
+    // Renders the interrupted test end screen
+    fn render_test_interrupted(&mut self, frame: &mut Frame) {
+        self.set_final_stats(false);
+        let input_area = self.create_layout(40, 16, frame);
+
+        let mut lines: Vec<Line<'static>> = Vec::new();
+        lines.push(Line::from(Span::styled(
+            format!("Test failed: {}", TestType::as_string(&self.test.ttype)),
+            Style::default().fg(Color::Red),
+        )));
+
+        lines.push(Line::from(Span::raw("")));
+
+        lines.push(Line::from(Span::styled(
+            format!("WPM: {}", (self.stats.wpm * 100.0).round() / 100.0),
+            Style::default().fg(Color::Blue),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("Accuracy: {}%", (self.stats.accuracy * 100.0).round()),
+            Style::default().fg(Color::Blue),
+        )));
+        lines.push(Line::from(Span::raw("")));
+
+        lines.push(Line::from(Span::raw(format!(
+            "Time: {} seconds",
+            self.stats.time / 1000.0
+        ))));
+        lines.push(Line::from(Span::raw(format!(
+            "raw WPM: {}",
+            (self.stats.wpm_raw * 100.0).round() / 100.0
+        ))));
+        lines.push(Line::from(Span::raw(format!(
+            "Characters: {}",
+            self.stats.typed_characters
+        ))));
+        lines.push(Line::from(Span::raw(format!(
+            "Words: {}",
+            self.stats.typed_words
+        ))));
+
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::styled(
+            "Restart test: Tab",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Back to main menu: Esc",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Quit: q",
+            Style::default().fg(Color::DarkGray),
+        )));
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .centered()
+            .block(Block::new());
+        frame.render_widget(input, input_area);
+    }
+
     // Renders the end screen
-    fn render_endscreen(&mut self, frame: &mut Frame) {
+    fn render_test_finished(&mut self, frame: &mut Frame) {
         let input_area = self.create_layout(40, 16, frame);
 
         let mut lines: Vec<Line<'static>> = Vec::new();
@@ -505,7 +566,7 @@ impl Tuipe {
     pub fn render(&mut self, frame: &mut Frame) {
         // check if test done instead of self.words == self.input
         if !self.stats.time_is_set && self.check_is_test_done() {
-            self.set_final_stats();
+            self.set_final_stats(true);
             self.state = State::TestFinished;
         }
 
@@ -516,8 +577,8 @@ impl Tuipe {
             State::TestTypeSelector => self.render_test_type_selector(frame),
             State::DifficultySelector => self.render_difficulty_selector(frame),
             State::Typing => self.render_test(frame),
-            State::TestFinished => self.render_endscreen(frame),
-            State::TestInterrupted => self.render_endscreen(frame),
+            State::TestFinished => self.render_test_finished(frame),
+            State::TestInterrupted => self.render_test_interrupted(frame),
         }
     }
 }

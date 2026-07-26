@@ -8,8 +8,8 @@ impl Tuipe {
     }
 
     // Sets the test results into the stats struct and saves the results
-    // into the database
-    pub fn set_final_stats(&mut self) {
+    // into the database if given save variable is true
+    pub fn set_final_stats(&mut self, save: bool) {
         // Calculate and set time
         self.stats.time = (get_current_time_as_millis() - self.test.start_time) as f64;
         self.stats.time_is_set = true;
@@ -50,7 +50,9 @@ impl Tuipe {
         self.stats.typed_characters = correct_characters;
         self.stats.accuracy = self.test.correct_chars as f64
             / (self.test.correct_chars + self.test.incorrect_chars) as f64;
-        self.save_success = self.save_to_db();
+        if save {
+            self.save_success = self.save_to_db();
+        }
     }
 
     // Enter a new character
