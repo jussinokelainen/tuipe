@@ -9,7 +9,7 @@ use rand::seq::IndexedRandom;
 use ratatui::DefaultTerminal;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{env, fs, fs::create_dir_all};
+use std::{env, fs, fs::create_dir_all, io::Error};
 use structs::{Difficulty, FinalStats, State, Test};
 pub use structs::{Language, MainMenu, TestType};
 
@@ -61,22 +61,32 @@ fn get_current_time_as_millis() -> u128 {
     current_time.as_millis()
 }
 
-// Returns the filepath of the local results database
-fn db_path() -> PathBuf {
-    let mut path =
-        PathBuf::from(env::var("HOME").expect("$HOME not set")).join(".local/share/tuipe/");
+fn get_local_dir() -> Result<PathBuf, Error> {
+    let path = PathBuf::from(env::var("HOME").expect("$HOME not set")).join(".local/share/tuipe/");
     match create_dir_all(&path) {
-        Ok(_) => {}
-        Err(_) => {}
+        Ok(_) => Ok(path),
+        Err(e) => Err(e),
     }
-    path = path.join("results.db");
-    path
+}
+
+// Returns the filepath of the local results database
+fn db_path() -> (PathBuf, bool) {
+    let local_dir = get_local_dir();
+    match local_dir {
+        Ok(path) => (path.join("results.db"), true),
+        Err(_) => (PathBuf::from(""), false),
+    }
 }
 
 // Create the database table if it doesn't exist
 // returns true if the table already existed or it was successfully created
 fn database_exists() -> bool {
-    let db_path = db_path();
+    let (db_path, success) = db_path();
+    // If getting the path for the database was not successful, the database
+    // does not exist to the program
+    if !success {
+        return false;
+    }
     let table_create_query = "
             CREATE TABLE IF NOT EXISTS results(
                 wpm REAL,

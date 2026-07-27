@@ -6,7 +6,13 @@ impl Tuipe {
     // Save the test results into the database
     pub fn save_to_db(&self) -> Result<(), sqlite::Error> {
         // results(wpm REAL, raw_wpm REAL, accuracy REAL, test_type TEXT, language TEXT, characters_typed INTEGER, time INTEGER)
-        let db_path = db_path();
+        let (db_path, success) = db_path();
+        if !success {
+            return Err(sqlite::Error {
+                code: Some(1 as isize),
+                message: Some(String::from("getting db path unsuccessful")),
+            });
+        }
         let sql_statement = format!(
             "
             INSERT INTO
@@ -27,7 +33,13 @@ impl Tuipe {
     // Get stats for all saved test results in the database
     // Returns all stats as Vec<DBdata>, or an error if there was an error
     pub fn get_stats_from_db(&self) -> Result<Vec<DBdata>, sqlite::Error> {
-        let db_path = db_path();
+        let (db_path, success) = db_path();
+        if !success {
+            return Err(sqlite::Error {
+                code: Some(1 as isize),
+                message: Some(String::from("getting db path unsuccessful")),
+            });
+        }
         let sql_statement = "
             SELECT
                 wpm,
