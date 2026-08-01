@@ -162,7 +162,7 @@ impl Tuipe {
 
     // Renders the main menu
     fn render_main_menu(&mut self, frame: &mut Frame) {
-        let input_area = self.create_layout(40, 18, frame);
+        let input_area = self.create_layout(40, 19, frame);
 
         let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
