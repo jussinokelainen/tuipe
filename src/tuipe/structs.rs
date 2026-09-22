@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 pub struct Test {
     pub ttype: TestType,
     pub difficulty: Difficulty,
@@ -113,6 +115,15 @@ impl Difficulty {
             Difficulty::Master => "Master",
         }
     }
+
+    pub fn from_string(str: &str) -> Self {
+        match str {
+            "Normal" => Difficulty::Normal,
+            "Expert" => Difficulty::Expert,
+            "Master" => Difficulty::Master,
+            _ => Difficulty::Normal,
+        }
+    }
 }
 
 pub enum TestType {
@@ -168,6 +179,18 @@ impl TestType {
             TestType::Time10 => "10 Seconds",
             TestType::Time30 => "30 Seconds",
             TestType::Time60 => "60 Seconds",
+        }
+    }
+
+    pub fn from_string(str: &str) -> Self {
+        match str {
+            "10 Words" => TestType::Words10,
+            "25 Words" => TestType::Words25,
+            "50 Words" => TestType::Words50,
+            "10 Seconds" => TestType::Time10,
+            "30 Seconds" => TestType::Time30,
+            "60 Seconds" => TestType::Time60,
+            _ => TestType::Words10,
         }
     }
 
@@ -247,4 +270,22 @@ impl Language {
             Language::English25k => "English 25k",
         }
     }
+
+    pub fn from_string(str: &str) -> Self {
+        match str {
+            "English" => Language::English,
+            "English 1k" => Language::English1k,
+            "English 5k" => Language::English5k,
+            "English 10k" => Language::English10k,
+            "English 25k" => Language::English25k,
+            _ => Language::English,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Config {
+    pub language: String,
+    pub test_type: String,
+    pub difficulty: String,
 }

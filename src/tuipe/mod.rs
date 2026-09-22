@@ -7,10 +7,11 @@ use crossterm::event::{self, KeyEventKind};
 use rand::rng;
 use rand::seq::IndexedRandom;
 use ratatui::DefaultTerminal;
+use std::fs::File;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, fs, fs::create_dir_all, io::Error};
-use structs::{Difficulty, FinalStats, State, Test};
+use structs::{Config, Difficulty, FinalStats, State, Test};
 pub use structs::{Language, MainMenu, TestType};
 
 // Returns a vector containing the words for the typing test
@@ -67,6 +68,50 @@ fn get_local_dir() -> Result<PathBuf, Error> {
         Ok(_) => Ok(path),
         Err(e) => Err(e),
     }
+}
+
+// Return the filepath to the config file, or an error
+fn config_path() -> Result<PathBuf, Error> {
+    let local_dir = get_local_dir()?;
+    Ok(local_dir.join("config.json"))
+}
+
+// Check if the config file exists, and try to create it if it doesn't
+fn config_file_exists() -> Result<()> {
+    let path = config_path()?;
+    if !path.is_file() {
+        File::create(path)?;
+    }
+    Ok(())
+}
+
+// Function to read the config json file.
+// Either returns an error, the read values or default values if the read
+// values are something unexpected
+fn load_configs() -> Result<(Language, TestType, Difficulty)> {
+    // Check if the config file exists
+    config_file_exists()?;
+
+    let json = std::fs::read_to_string(config_path()?)?;
+    let configs: Config = serde_json::from_str(&json)?;
+
+    Ok((
+        Language::from_string(configs.language.as_str()),
+        TestType::from_string(configs.test_type.as_str()),
+        Difficulty::from_string(configs.difficulty.as_str()),
+    ))
+}
+
+fn save_configs(lang: Language, ttype: TestType, diff: Difficulty) -> Result<()> {
+    let config = Config {
+        language: String::from(Language::as_string(&lang)),
+        test_type: String::from(TestType::as_string(&ttype)),
+        difficulty: String::from(Difficulty::as_string(&diff)),
+    };
+    let json = serde_json::to_string_pretty(&config)?;
+    std::fs::write(config_path()?, json)?;
+
+    Ok(())
 }
 
 // Returns the filepath of the local results database
@@ -129,6 +174,16 @@ pub struct Tuipe {
 
 impl Tuipe {
     pub fn new() -> Self {
+        let mut test_struct = Test::new();
+        let mut test_lang = Language::English;
+        match load_configs() {
+            Ok((lang, ttype, diff)) => {
+                test_lang = lang;
+                test_struct.ttype = ttype;
+                test_struct.difficulty = diff;
+            }
+            Err(_) => {}
+        }
         Self {
             version: match option_env!("VERSION") {
                 Some(version_num) => version_num,
@@ -139,12 +194,12 @@ impl Tuipe {
             // since if creating the database fails i want the program
             // to exit atleast for now, maybe later this will change
             should_exit: !database_exists(),
-            language: Language::English,
+            language: test_lang,
             save_success: Ok(()),
 
             menu_selection: 0,
 
-            test: Test::new(),
+            test: test_struct,
             stats: FinalStats::new(),
 
             input: vec![String::new()],
@@ -229,6 +284,7 @@ impl Tuipe {
                 }
             }
             if self.should_exit {
+                save_configs(self.language, self.test.ttype, self.test.difficulty)?;
                 return Ok(());
             }
         }
