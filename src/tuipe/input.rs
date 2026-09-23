@@ -93,9 +93,17 @@ impl Tuipe {
             self.input_buffer[w_idx] = buffer_count;
         }
 
-        // Check that the word is correct if on Expert difficulty
-        if self.test.difficulty == Difficulty::Expert && self.words[w_idx] != self.input[w_idx] {
-            self.state = State::TestInterrupted
+        // Check that the word is correct
+        if self.words[w_idx] != self.input[w_idx] {
+            if self.test.difficulty == Difficulty::Master
+                || self.test.difficulty == Difficulty::Expert
+            {
+                // If on master or expert, end the test
+                self.state = State::TestInterrupted
+            } else {
+                // else increment incorrect characters
+                self.test.incorrect_chars += 1;
+            }
         }
 
         self.character_index = 0;
