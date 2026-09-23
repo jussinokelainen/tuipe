@@ -31,8 +31,10 @@ fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String>
         Language::English25k => DATADIR.to_string() + "/languages/english_25k.json",
     };
 
-    let data = fs::read_to_string(wordfile).expect("Failed to read file");
+    let data = fs::read_to_string(&wordfile).expect("Failed to read file");
     let word_vector: Vec<String> = serde_json::from_str(&data).expect("Failed to parse JSON");
+
+    log::info!("Read wordfile: {}", &wordfile);
 
     let mut words = Vec::new();
     let mut rng = rng();
@@ -91,12 +93,19 @@ fn load_configs() -> Result<(Language, TestType, Difficulty)> {
     config_file_exists()?;
 
     let json = std::fs::read_to_string(config_path()?)?;
-    let configs: Config = serde_json::from_str(&json)?;
+    let config: Config = serde_json::from_str(&json)?;
+
+    log::info!(
+        "Loaded settings: {}, {}, {}",
+        config.language,
+        config.test_type,
+        config.difficulty
+    );
 
     Ok((
-        Language::from_string(configs.language.as_str()),
-        TestType::from_string(configs.test_type.as_str()),
-        Difficulty::from_string(configs.difficulty.as_str()),
+        Language::from_string(config.language.as_str()),
+        TestType::from_string(config.test_type.as_str()),
+        Difficulty::from_string(config.difficulty.as_str()),
     ))
 }
 
@@ -108,6 +117,13 @@ fn save_configs(lang: Language, ttype: TestType, diff: Difficulty) -> Result<()>
     };
     let json = serde_json::to_string_pretty(&config)?;
     std::fs::write(config_path()?, json)?;
+
+    log::info!(
+        "Saved configs: {}, {}, {}",
+        config.language,
+        config.test_type,
+        config.difficulty
+    );
 
     Ok(())
 }

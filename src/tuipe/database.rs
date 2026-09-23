@@ -27,7 +27,22 @@ impl Tuipe {
             self.stats.time
         );
         let connection = sqlite::open(db_path)?;
-        connection.execute(sql_statement)
+        match connection.execute(sql_statement) {
+            Ok(_) => {
+                log::info!(
+                    "Saved to database: wpm:{}, raw_wpm:{}, accuracy:{}, test:{}, language:{}, characters:{}, time:{}",
+                    self.stats.wpm,
+                    self.stats.wpm_raw,
+                    self.stats.accuracy,
+                    TestType::as_string(&self.test.ttype),
+                    Language::as_string(&self.language),
+                    self.stats.typed_characters,
+                    self.stats.time
+                );
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }
     }
 
     // Get stats for all saved test results in the database
