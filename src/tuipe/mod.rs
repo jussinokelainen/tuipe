@@ -4,13 +4,11 @@ mod render;
 mod structs;
 use color_eyre::Result;
 use crossterm::event::{self, KeyEventKind};
-use rand::rng;
-use rand::seq::IndexedRandom;
+use rand::{rng, seq::IndexedRandom};
 use ratatui::DefaultTerminal;
-use std::fs::File;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{env, fs, fs::create_dir_all, io::Error};
+use std::{env, fs, fs::File, fs::create_dir_all, io::Error};
 use structs::{Config, Difficulty, FinalStats, State, Test};
 pub use structs::{Language, MainMenu, TestType};
 
@@ -62,7 +60,7 @@ fn get_current_time_as_millis() -> u128 {
     current_time.as_millis()
 }
 
-fn get_local_dir() -> Result<PathBuf, Error> {
+fn get_share_dir() -> Result<PathBuf, Error> {
     let path = PathBuf::from(env::var("HOME").expect("$HOME not set")).join(".local/share/tuipe/");
     match create_dir_all(&path) {
         Ok(_) => Ok(path),
@@ -72,7 +70,7 @@ fn get_local_dir() -> Result<PathBuf, Error> {
 
 // Return the filepath to the config file, or an error
 fn config_path() -> Result<PathBuf, Error> {
-    let local_dir = get_local_dir()?;
+    let local_dir = get_share_dir()?;
     Ok(local_dir.join("config.json"))
 }
 
@@ -115,8 +113,9 @@ fn save_configs(lang: Language, ttype: TestType, diff: Difficulty) -> Result<()>
 }
 
 // Returns the filepath of the local results database
+// TODO: maybe return a result instead?
 fn db_path() -> (PathBuf, bool) {
-    let local_dir = get_local_dir();
+    let local_dir = get_share_dir();
     match local_dir {
         Ok(path) => (path.join("results.db"), true),
         Err(_) => (PathBuf::from(""), false),
@@ -285,6 +284,7 @@ impl Tuipe {
             }
             if self.should_exit {
                 save_configs(self.language, self.test.ttype, self.test.difficulty)?;
+                log::info!("Application stopped");
                 return Ok(());
             }
         }
