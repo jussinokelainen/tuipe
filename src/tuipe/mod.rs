@@ -150,7 +150,7 @@ fn save_configs(lang: Language, ttype: TestType, diff: Difficulty, capitals: boo
 
 // Returns the filepath of the local results database
 // TODO: maybe return a result instead?
-fn db_path() -> (PathBuf, bool) {
+pub fn db_path() -> (PathBuf, bool) {
     let local_dir = get_share_dir();
     match local_dir {
         Ok(path) => (path.join("results.db"), true),
