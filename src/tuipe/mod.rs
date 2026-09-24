@@ -310,6 +310,7 @@ impl Tuipe {
                     State::TestTypeSelector => self.test_type_selector_input(key.code),
                     State::LanguageSelector => self.language_selector_input(key.code),
                     State::DifficultySelector => self.difficulty_selector_input(key.code),
+                    State::CapitalizationSelector => self.capitalization_selector_input(key.code),
                     State::MainMenu => self.main_menu_input(key.code),
                     State::TestFinished => self.end_screen_input(key.code),
                     State::TestInterrupted => self.end_screen_input(key.code),

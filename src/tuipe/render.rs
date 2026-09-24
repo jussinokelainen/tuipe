@@ -189,6 +189,11 @@ impl Tuipe {
             format!("Difficulty: {difficulty}"),
             Style::default().fg(Color::LightCyan),
         )));
+        let capitals = self.test.capitals;
+        lines.push(Line::from(Span::styled(
+            format!("Capital letters: {capitals}"),
+            Style::default().fg(Color::LightCyan),
+        )));
         lines.push(Line::from(Span::raw("")));
 
         let options = [
@@ -196,6 +201,7 @@ impl Tuipe {
             "Select test type",
             "Select language",
             "Select difficulty",
+            "Select capitalization",
             "View stats history",
         ];
         for (i, name) in options.iter().enumerate() {
@@ -351,6 +357,44 @@ impl Tuipe {
         }
 
         self.add_select_menu_controls(&mut lines);
+
+        let input = Paragraph::new(lines)
+            .style(Style::default())
+            .centered()
+            .block(Block::new());
+        frame.render_widget(input, input_area);
+    }
+
+    // Renders the capitalization selector screen
+    fn render_capitalization_selector(&mut self, frame: &mut Frame) {
+        let input_area = self.create_layout(40, 16, frame);
+
+        let mut lines: Vec<Line<'_>> = Vec::new();
+        lines.push(Line::from(Span::styled(
+            format!("Current capitalization: {}", self.test.capitals),
+            Style::default().fg(Color::Green),
+        )));
+        lines.push(Line::from(Span::raw("")));
+
+        lines.push(Line::from(Span::styled(
+            format!("> Toggle capitals"),
+            Style::default().fg(Color::Blue),
+        )));
+
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::styled(
+            "Select: Enter",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Quit: q",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Back: Esc",
+            Style::default().fg(Color::DarkGray),
+        )));
 
         let input = Paragraph::new(lines)
             .style(Style::default())
@@ -595,6 +639,7 @@ impl Tuipe {
             State::LanguageSelector => self.render_language_selector(frame),
             State::TestTypeSelector => self.render_test_type_selector(frame),
             State::DifficultySelector => self.render_difficulty_selector(frame),
+            State::CapitalizationSelector => self.render_capitalization_selector(frame),
             State::Typing => self.render_test(frame),
             State::TestFinished => self.render_test_finished(frame),
             State::TestInterrupted => self.render_test_interrupted(frame),

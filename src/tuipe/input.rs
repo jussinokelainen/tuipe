@@ -157,6 +157,7 @@ impl Tuipe {
                     MainMenu::SelectTestType => self.state = State::TestTypeSelector,
                     MainMenu::SelectLanguage => self.state = State::LanguageSelector,
                     MainMenu::SelectDifficulty => self.state = State::DifficultySelector,
+                    MainMenu::SelectCapitalization => self.state = State::CapitalizationSelector,
                     MainMenu::ViewStats => self.state = State::StatsScreen,
                 }
                 self.menu_selection = 0;
@@ -180,6 +181,18 @@ impl Tuipe {
                 self.test.difficulty = Difficulty::from_index(self.menu_selection);
                 self.state = State::MainMenu;
                 self.menu_selection = 0
+            }
+            KeyCode::Char('q') => self.should_exit = true,
+            KeyCode::Esc => self.state = State::MainMenu,
+            _ => {}
+        }
+    }
+
+    // Input controls for the capitalization selector
+    pub fn capitalization_selector_input(&mut self, keycode: crossterm::event::KeyCode) {
+        match keycode {
+            KeyCode::Enter => {
+                self.test.capitals = !self.test.capitals;
             }
             KeyCode::Char('q') => self.should_exit = true,
             KeyCode::Esc => self.state = State::MainMenu,

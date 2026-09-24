@@ -82,6 +82,7 @@ pub enum State {
     LanguageSelector,
     TestTypeSelector,
     DifficultySelector,
+    CapitalizationSelector,
     TestFinished,
     TestInterrupted,
     Typing,
@@ -213,11 +214,12 @@ pub enum MainMenu {
     SelectTestType,
     SelectLanguage,
     SelectDifficulty,
+    SelectCapitalization,
     ViewStats,
 }
 
 impl MainMenu {
-    pub const COUNT: usize = 5;
+    pub const COUNT: usize = 6;
 
     pub fn from_index(index: usize) -> Self {
         match index {
@@ -225,7 +227,8 @@ impl MainMenu {
             1 => MainMenu::SelectTestType,
             2 => MainMenu::SelectLanguage,
             3 => MainMenu::SelectDifficulty,
-            4 => MainMenu::ViewStats,
+            4 => MainMenu::SelectCapitalization,
+            5 => MainMenu::ViewStats,
             _ => MainMenu::StartTest,
         }
     }
