@@ -16,13 +16,14 @@ impl Tuipe {
         let sql_statement = format!(
             "
             INSERT INTO
-                results(wpm, raw_wpm, accuracy, test_type, language, characters_typed, time)
-                VALUES ({}, {}, {}, '{}', '{}', {}, {});",
+                results(wpm, raw_wpm, accuracy, test_type, language, capital_letters, characters_typed, time)
+                VALUES ({}, {}, {}, '{}', '{}', {}, {}, {});",
             self.stats.wpm,
             self.stats.wpm_raw,
             self.stats.accuracy,
             TestType::as_string(&self.test.ttype),
             Language::as_string(&self.language),
+            self.test.capitals,
             self.stats.typed_characters,
             self.stats.time
         );

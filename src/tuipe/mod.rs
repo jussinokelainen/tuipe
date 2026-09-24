@@ -174,6 +174,7 @@ fn database_exists() -> bool {
                 accuracy REAL,
                 test_type TEXT,
                 language TEXT,
+                capital_letters BOOLEAN,
                 characters_typed INTEGER,
                 time INTEGER
             );";
