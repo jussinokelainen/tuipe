@@ -1,27 +1,29 @@
 use serde::{Deserialize, Serialize};
 
 pub struct Test {
-    pub ttype: TestType,
-    pub difficulty: Difficulty,
-    pub is_started: bool,
-    pub start_time: u128,
-    pub is_timed: bool,
-    pub time_limit: usize,
+    pub capitals: bool,
     pub correct_chars: u16,
+    pub difficulty: Difficulty,
     pub incorrect_chars: u16,
+    pub is_started: bool,
+    pub is_timed: bool,
+    pub start_time: u128,
+    pub time_limit: usize,
+    pub ttype: TestType,
 }
 
 impl Test {
     pub fn new() -> Self {
         Self {
-            ttype: TestType::Words25,
-            difficulty: Difficulty::Normal,
-            is_started: false,
-            start_time: 0,
-            is_timed: false,
-            time_limit: 0,
+            capitals: false,
             correct_chars: 0,
+            difficulty: Difficulty::Normal,
             incorrect_chars: 0,
+            is_started: false,
+            is_timed: false,
+            start_time: 0,
+            time_limit: 0,
+            ttype: TestType::Words25,
         }
     }
 }
@@ -288,4 +290,5 @@ pub struct Config {
     pub language: String,
     pub test_type: String,
     pub difficulty: String,
+    pub capitals: bool,
 }

@@ -4,7 +4,7 @@ mod render;
 mod structs;
 use color_eyre::Result;
 use crossterm::event::{self, KeyEventKind};
-use rand::{rng, seq::IndexedRandom};
+use rand::{RngExt, rng, seq::IndexedRandom};
 use ratatui::DefaultTerminal;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -14,7 +14,7 @@ pub use structs::{Language, MainMenu, TestType};
 
 // Returns a vector containing the words for the typing test
 // Takes the test language and the test type as parameters
-fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String> {
+fn get_words_as_vector(language: &Language, test_type: &TestType, capitals: bool) -> Vec<String> {
     // Get directory for word files at compile time from the DATADIR argument,
     // or use /usr/share/tuipe as default fallback
     const DATADIR: &str = match option_env!("DATADIR") {
@@ -38,12 +38,28 @@ fn get_words_as_vector(language: &Language, test_type: &TestType) -> Vec<String>
 
     let mut words = Vec::new();
     let mut rng = rng();
-    let mut prev_word = "";
+    let mut prev_word = String::from("");
     let mut i = 0;
     while i < count {
-        if let Some(new_word) = word_vector.choose(&mut rng) {
+        if let Some(word) = word_vector.choose(&mut rng) {
+            let mut new_word = word.to_lowercase();
             if new_word != prev_word {
-                words.push(new_word.clone().to_lowercase());
+                if capitals {
+                    let mut char_rng = rand::rng();
+                    new_word = new_word
+                        .chars()
+                        .map(|c| {
+                            if char_rng.random_bool(0.25) {
+                                c.to_ascii_uppercase()
+                            } else {
+                                c
+                            }
+                        })
+                        .collect();
+                    words.push(new_word.clone());
+                } else {
+                    words.push(new_word.clone());
+                }
                 prev_word = new_word;
                 i += 1;
             }
@@ -88,7 +104,7 @@ fn config_file_exists() -> Result<()> {
 // Function to read the config json file.
 // Either returns an error, the read values or default values if the read
 // values are something unexpected
-fn load_configs() -> Result<(Language, TestType, Difficulty)> {
+fn load_configs() -> Result<(Language, TestType, Difficulty, bool)> {
     // Check if the config file exists
     config_file_exists()?;
 
@@ -96,33 +112,37 @@ fn load_configs() -> Result<(Language, TestType, Difficulty)> {
     let config: Config = serde_json::from_str(&json)?;
 
     log::info!(
-        "Loaded settings: {}, {}, {}",
+        "Loaded configs: language:{}, type:{}, difficulty:{}, capitals:{}",
         config.language,
         config.test_type,
-        config.difficulty
+        config.difficulty,
+        config.capitals
     );
 
     Ok((
         Language::from_string(config.language.as_str()),
         TestType::from_string(config.test_type.as_str()),
         Difficulty::from_string(config.difficulty.as_str()),
+        config.capitals,
     ))
 }
 
-fn save_configs(lang: Language, ttype: TestType, diff: Difficulty) -> Result<()> {
+fn save_configs(lang: Language, ttype: TestType, diff: Difficulty, capitals: bool) -> Result<()> {
     let config = Config {
         language: String::from(Language::as_string(&lang)),
         test_type: String::from(TestType::as_string(&ttype)),
         difficulty: String::from(Difficulty::as_string(&diff)),
+        capitals: capitals,
     };
     let json = serde_json::to_string_pretty(&config)?;
     std::fs::write(config_path()?, json)?;
 
     log::info!(
-        "Saved configs: {}, {}, {}",
+        "Saved configs: language:{}, type:{}, difficulty:{}, capitals:{}",
         config.language,
         config.test_type,
-        config.difficulty
+        config.difficulty,
+        config.capitals
     );
 
     Ok(())
@@ -192,10 +212,11 @@ impl Tuipe {
         let mut test_struct = Test::new();
         let mut test_lang = Language::English;
         match load_configs() {
-            Ok((lang, ttype, diff)) => {
+            Ok((lang, ttype, diff, caps)) => {
                 test_lang = lang;
                 test_struct.ttype = ttype;
                 test_struct.difficulty = diff;
+                test_struct.capitals = caps
             }
             Err(_) => {}
         }
@@ -244,7 +265,7 @@ impl Tuipe {
 
         self.character_index = 0;
         self.word_index = 0;
-        self.words = get_words_as_vector(&self.language, &self.test.ttype);
+        self.words = get_words_as_vector(&self.language, &self.test.ttype, self.test.capitals);
     }
 
     // Checks whether the test is over, by either the time being up in a timed
@@ -299,7 +320,12 @@ impl Tuipe {
                 }
             }
             if self.should_exit {
-                save_configs(self.language, self.test.ttype, self.test.difficulty)?;
+                save_configs(
+                    self.language,
+                    self.test.ttype,
+                    self.test.difficulty,
+                    self.test.capitals,
+                )?;
                 log::info!("Application stopped");
                 return Ok(());
             }
