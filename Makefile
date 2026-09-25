@@ -22,6 +22,10 @@ run:
 	@mkdir -p $$HOME/.local/share/tuipe
 	@cargo run
 
+debug:
+	@mkdir -p $$HOME/.local/share/tuipe
+	@cargo build
+
 install: $(BIN)
 	@printf "\033[36m==> \033[0mInstalling files...\n"
 	@mkdir -p $(BINDIR)

@@ -1,3 +1,4 @@
+mod flagger;
 mod tuipe;
 use crate::tuipe::db_path;
 use chrono::Local;
@@ -84,6 +85,19 @@ fn fix_database() -> Result<()> {
     }
 }
 
+fn print_help() {
+    println!(
+        "Help for tuipe
+Usage: tuipe [--fix-database] [--help | -h]
+
+    Available flags:
+        --help, -h     | Print this message
+        --fix-database | Check that all the columns are correct and exist in
+                       | the results database. This can be ran after
+                       | breaking changes if saving results is failing."
+    )
+}
+
 fn main() -> Result<()> {
     let log_file_path = get_log_file_path()?;
     WriteLogger::init(
@@ -92,22 +106,28 @@ fn main() -> Result<()> {
         File::create(&log_file_path)?,
     )?;
 
-    // Get and parse arguments
-    let args = std::env::args();
-    let mut args_as_vec = vec![];
-    for arg in args.enumerate() {
-        args_as_vec.push(arg.1)
-    }
-    args_as_vec.remove(0);
-    log::info!("{:?}", args_as_vec);
-    if args_as_vec.len() > 0 {
-        // Some arguments were given
-
-        // Currently fixing the database is the only operation
-        // that can be done with the arguments so only check for it
-        if args_as_vec[0] == "--fix-database" {
-            fix_database()?;
-            return Ok(());
+    let valid_flags = flagger::Flagset {
+        flags: vec!["fix-database", "help", "h"],
+        value_flags: Vec::new(),
+        opt_flags: Vec::new(),
+    };
+    let parsed_args = flagger::parse_args(valid_flags)?;
+    for flag in parsed_args.flags {
+        match flag.as_str() {
+            "fix-database" => {
+                log::info!("Checking database for missing or incorrect columns");
+                println!("Checking database for missing or incorrect columns");
+                fix_database()?;
+                return Ok(());
+            }
+            "help" | "h" => {
+                print_help();
+                return Ok(());
+            }
+            _ => {
+                println!("Unexpected flag: {}", flag);
+                return Ok(());
+            }
         }
     }
 
