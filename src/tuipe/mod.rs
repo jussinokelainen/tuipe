@@ -1,16 +1,124 @@
 mod database;
-mod input;
-mod render;
-mod structs;
+mod menu_main;
+mod menu_stats;
+mod opt_capitalization;
+mod opt_difficulty;
+mod opt_language;
+mod opt_testtype;
+mod test_over;
+mod test_running;
+pub use crate::tuipe::{
+    opt_difficulty::Difficulty, opt_language::Language, opt_testtype::TestType,
+};
 use color_eyre::Result;
 use crossterm::event::{self, KeyEventKind};
 use rand::{RngExt, rng, seq::IndexedRandom};
 use ratatui::DefaultTerminal;
+use ratatui::Frame;
+use ratatui::layout::{Constraint, Direction, Flex, Layout, Rect};
+use ratatui::style::{Color, Style};
+use ratatui::text::{Line, Span};
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, fs, fs::File, fs::create_dir_all, io::Error};
-use structs::{Config, Difficulty, FinalStats, State, Test};
-pub use structs::{Language, MainMenu, TestType};
+
+pub struct Test {
+    pub capitals: bool,
+    pub correct_chars: u16,
+    pub difficulty: Difficulty,
+    pub incorrect_chars: u16,
+    pub is_started: bool,
+    pub is_timed: bool,
+    pub start_time: u128,
+    pub time_limit: usize,
+    pub ttype: TestType,
+}
+
+impl Test {
+    pub fn new() -> Self {
+        Self {
+            capitals: false,
+            correct_chars: 0,
+            difficulty: Difficulty::Normal,
+            incorrect_chars: 0,
+            is_started: false,
+            is_timed: false,
+            start_time: 0,
+            time_limit: 0,
+            ttype: TestType::Words25,
+        }
+    }
+}
+
+pub struct FinalStats {
+    pub wpm: f64,
+    pub wpm_raw: f64,
+    pub accuracy: f64,
+    pub time: f64,
+    pub time_is_set: bool,
+    pub typed_words: usize,
+    pub typed_characters: usize,
+}
+
+impl FinalStats {
+    pub fn new() -> Self {
+        Self {
+            wpm: 0.0,
+            wpm_raw: 0.0,
+            accuracy: 0.0,
+            time: 0.0,
+            time_is_set: false,
+            typed_words: 0,
+            typed_characters: 0,
+        }
+    }
+}
+
+pub struct DBdata {
+    pub wpm: f64,
+    pub raw_wpm: f64,
+    pub accuracy: f64,
+    pub test_type: String,
+    pub language: String,
+    pub characters_typed: u16,
+    pub time: u128,
+}
+
+impl DBdata {
+    pub fn new() -> Self {
+        Self {
+            wpm: 0.0,
+            raw_wpm: 0.0,
+            accuracy: 0.0,
+            test_type: String::new(),
+            language: String::new(),
+            characters_typed: 0,
+            time: 0,
+        }
+    }
+}
+
+// Main state enum for the program
+pub enum State {
+    MainMenu,
+    StatsScreen,
+    LanguageSelector,
+    TestTypeSelector,
+    DifficultySelector,
+    CapitalizationSelector,
+    TestFinished,
+    TestInterrupted,
+    Typing,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Config {
+    pub language: String,
+    pub test_type: String,
+    pub difficulty: String,
+    pub capitals: bool,
+}
 
 // Returns a vector containing the words for the typing test
 // Takes the test language and the test type as parameters
@@ -188,6 +296,7 @@ fn database_exists() -> bool {
     }
 }
 
+// Main struct for the program
 pub struct Tuipe {
     version: &'static str,
     state: State,
@@ -299,6 +408,78 @@ impl Tuipe {
         }
 
         false
+    }
+
+    // Function for rendering screens, returns a Rect positioned at the center of
+    // the screen with maximum width and height of given parameters
+    fn create_layout(&self, width: u16, height: u16, frame: &mut Frame) -> Rect {
+        let layout_vert = Layout::default()
+            .direction(Direction::Vertical)
+            .flex(Flex::Center)
+            .constraints([
+                Constraint::Min(0),
+                Constraint::Max(height),
+                Constraint::Min(0),
+            ])
+            .split(frame.area());
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .flex(Flex::Center)
+            .constraints([
+                Constraint::Min(0),
+                Constraint::Max(width),
+                Constraint::Min(0),
+            ])
+            .split(layout_vert[1]);
+        layout_horizontal[1]
+    }
+
+    // Adds the main menu controls as dark gray to the lines vector
+    fn add_menu_controls(&self, lines: &mut Vec<Line<'_>>) {
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::styled(
+            "Move: j/k",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Select: Enter",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Quit: q",
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    // Adds the control info for the option menus as dark gray to given lines vector
+    fn add_select_menu_controls(&self, lines: &mut Vec<Line<'_>>) {
+        self.add_menu_controls(lines);
+        lines.push(Line::from(Span::styled(
+            "Back: Esc",
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    // The main render function of the program
+    pub fn render(&mut self, frame: &mut Frame) {
+        // check if test done instead of self.words == self.input
+        if !self.stats.time_is_set && self.check_is_test_done() {
+            self.set_final_stats(true);
+            self.state = State::TestFinished;
+        }
+
+        match self.state {
+            State::MainMenu => self.render_main_menu(frame),
+            State::StatsScreen => self.render_stats_screen(frame),
+            State::LanguageSelector => self.render_language_selector(frame),
+            State::TestTypeSelector => self.render_test_type_selector(frame),
+            State::DifficultySelector => self.render_difficulty_selector(frame),
+            State::CapitalizationSelector => self.render_capitalization_selector(frame),
+            State::Typing => self.render_test(frame),
+            State::TestFinished => self.render_test_finished(frame),
+            State::TestInterrupted => self.render_test_interrupted(frame),
+        }
     }
 
     pub fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {

@@ -1,5 +1,5 @@
 mod tuipe;
-use crate::tuipe::{Language, TestType, db_path};
+use crate::tuipe::db_path;
 use chrono::Local;
 use chrono::SubsecRound;
 use color_eyre::Result;

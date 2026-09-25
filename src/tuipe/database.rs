@@ -1,5 +1,5 @@
 use crate::Tuipe;
-use crate::tuipe::{Language, TestType, db_path, structs::DBdata};
+use crate::tuipe::{DBdata, Language, TestType, db_path};
 use sqlite::State;
 
 impl Tuipe {
