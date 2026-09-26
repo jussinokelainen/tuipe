@@ -195,7 +195,8 @@ impl Tuipe {
             if self.test.difficulty == Difficulty::Master {
                 // End the test if on Master difficulty and input has
                 // incorrect character
-                self.state = State::TestInterrupted
+                self.state = State::TestInterrupted;
+                self.set_final_stats(false);
             } else {
                 self.test.incorrect_chars += 1;
             }
@@ -220,7 +221,8 @@ impl Tuipe {
                 || self.test.difficulty == Difficulty::Expert
             {
                 // If on master or expert, end the test
-                self.state = State::TestInterrupted
+                self.state = State::TestInterrupted;
+                self.set_final_stats(false);
             } else {
                 // else increment incorrect characters
                 self.test.incorrect_chars += 1;

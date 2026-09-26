@@ -20,7 +20,6 @@ impl Tuipe {
 
     // Renders the interrupted test end screen
     pub fn render_test_interrupted(&mut self, frame: &mut Frame) {
-        self.set_final_stats(false);
         let input_area = self.create_layout(40, 16, frame);
 
         let mut lines: Vec<Line<'_>> = Vec::new();
