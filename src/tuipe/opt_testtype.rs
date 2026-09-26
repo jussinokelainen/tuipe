@@ -98,11 +98,11 @@ impl Tuipe {
             }
             KeyCode::Enter => {
                 self.test.ttype = TestType::from_index(self.menu_selection);
-                self.state = State::MainMenu;
+                self.state = State::OptMenu;
                 self.menu_selection = 0
             }
             KeyCode::Char('q') => self.should_exit = true,
-            KeyCode::Esc => self.state = State::MainMenu,
+            KeyCode::Esc => self.state = State::OptMenu,
             _ => {}
         }
     }
@@ -132,7 +132,7 @@ impl Tuipe {
             lines.push(Line::from(Span::styled(label, style)));
         }
 
-        self.add_select_menu_controls(&mut lines);
+        self.add_opt_menu_controls(&mut lines);
 
         let input = Paragraph::new(lines)
             .style(Style::default())

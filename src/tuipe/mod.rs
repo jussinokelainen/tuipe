@@ -4,6 +4,7 @@ mod menu_stats;
 mod opt_capitalization;
 mod opt_difficulty;
 mod opt_language;
+mod opt_main;
 mod opt_testtype;
 mod test_over;
 mod test_running;
@@ -102,6 +103,7 @@ impl DBdata {
 // Main state enum for the program
 pub enum State {
     MainMenu,
+    OptMenu,
     StatsScreen,
     LanguageSelector,
     TestTypeSelector,
@@ -453,7 +455,7 @@ impl Tuipe {
     }
 
     // Adds the control info for the option menus as dark gray to given lines vector
-    fn add_select_menu_controls(&self, lines: &mut Vec<Line<'_>>) {
+    fn add_opt_menu_controls(&self, lines: &mut Vec<Line<'_>>) {
         self.add_menu_controls(lines);
         lines.push(Line::from(Span::styled(
             "Back: Esc",
@@ -470,15 +472,16 @@ impl Tuipe {
         }
 
         match self.state {
-            State::MainMenu => self.render_main_menu(frame),
-            State::StatsScreen => self.render_stats_screen(frame),
-            State::LanguageSelector => self.render_language_selector(frame),
-            State::TestTypeSelector => self.render_test_type_selector(frame),
-            State::DifficultySelector => self.render_difficulty_selector(frame),
             State::CapitalizationSelector => self.render_capitalization_selector(frame),
-            State::Typing => self.render_test(frame),
+            State::DifficultySelector => self.render_difficulty_selector(frame),
+            State::LanguageSelector => self.render_language_selector(frame),
+            State::MainMenu => self.render_main_menu(frame),
+            State::OptMenu => self.render_opt_menu(frame),
+            State::StatsScreen => self.render_stats_screen(frame),
             State::TestFinished => self.render_test_finished(frame),
             State::TestInterrupted => self.render_test_interrupted(frame),
+            State::TestTypeSelector => self.render_test_type_selector(frame),
+            State::Typing => self.render_test(frame),
         }
     }
 
@@ -488,14 +491,15 @@ impl Tuipe {
 
             if let Some(key) = event::read()?.as_key_press_event() {
                 match self.state {
-                    State::StatsScreen => self.stats_screen_input(key.code),
-                    State::TestTypeSelector => self.test_type_selector_input(key.code),
-                    State::LanguageSelector => self.language_selector_input(key.code),
-                    State::DifficultySelector => self.difficulty_selector_input(key.code),
                     State::CapitalizationSelector => self.capitalization_selector_input(key.code),
+                    State::DifficultySelector => self.difficulty_selector_input(key.code),
+                    State::LanguageSelector => self.language_selector_input(key.code),
                     State::MainMenu => self.main_menu_input(key.code),
+                    State::OptMenu => self.opt_menu_controls(key.code),
+                    State::StatsScreen => self.stats_screen_input(key.code),
                     State::TestFinished => self.end_screen_input(key.code),
                     State::TestInterrupted => self.end_screen_input(key.code),
+                    State::TestTypeSelector => self.test_type_selector_input(key.code),
                     State::Typing if key.kind == KeyEventKind::Press => {
                         self.typing_test_input(key.code)
                     }

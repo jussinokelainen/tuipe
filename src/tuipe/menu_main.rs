@@ -10,24 +10,18 @@ use ratatui::widgets::{Block, Paragraph};
 
 pub enum MainMenu {
     StartTest,
-    SelectTestType,
-    SelectLanguage,
-    SelectDifficulty,
-    SelectCapitalization,
+    Options,
     ViewStats,
 }
 
 impl MainMenu {
-    pub const COUNT: usize = 6;
+    pub const COUNT: usize = 3;
 
     pub fn from_index(index: usize) -> Self {
         match index {
             0 => MainMenu::StartTest,
-            1 => MainMenu::SelectTestType,
-            2 => MainMenu::SelectLanguage,
-            3 => MainMenu::SelectDifficulty,
-            4 => MainMenu::SelectCapitalization,
-            5 => MainMenu::ViewStats,
+            1 => MainMenu::Options,
+            2 => MainMenu::ViewStats,
             _ => MainMenu::StartTest,
         }
     }
@@ -46,10 +40,7 @@ impl Tuipe {
             KeyCode::Enter => {
                 match MainMenu::from_index(self.menu_selection) {
                     MainMenu::StartTest => self.restart_test(),
-                    MainMenu::SelectTestType => self.state = State::TestTypeSelector,
-                    MainMenu::SelectLanguage => self.state = State::LanguageSelector,
-                    MainMenu::SelectDifficulty => self.state = State::DifficultySelector,
-                    MainMenu::SelectCapitalization => self.state = State::CapitalizationSelector,
+                    MainMenu::Options => self.state = State::OptMenu,
                     MainMenu::ViewStats => self.state = State::StatsScreen,
                 }
                 self.menu_selection = 0;
@@ -95,14 +86,7 @@ impl Tuipe {
         )));
         lines.push(Line::from(Span::raw("")));
 
-        let options = [
-            "Start test",
-            "Select test type",
-            "Select language",
-            "Select difficulty",
-            "Select capitalization",
-            "View stats history",
-        ];
+        let options = ["Start test", "Options", "Statistics"];
         for (i, name) in options.iter().enumerate() {
             let style = if i == self.menu_selection {
                 Style::default().fg(Color::Blue)

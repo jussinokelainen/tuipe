@@ -14,7 +14,7 @@ impl Tuipe {
                 self.test.capitals = !self.test.capitals;
             }
             KeyCode::Char('q') => self.should_exit = true,
-            KeyCode::Esc => self.state = State::MainMenu,
+            KeyCode::Esc => self.state = State::OptMenu,
             _ => {}
         }
     }
