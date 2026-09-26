@@ -1,5 +1,5 @@
 use crate::Tuipe;
-use crate::tuipe::State;
+use crate::tuipe::OptMenu;
 use crossterm::event::KeyCode;
 use ratatui::Frame;
 use ratatui::style::{Color, Style};
@@ -88,7 +88,7 @@ impl TestType {
 
 impl Tuipe {
     // Input controls
-    pub fn test_type_selector_input(&mut self, keycode: crossterm::event::KeyCode) {
+    pub fn input_opt_testtype(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
                 self.menu_selection = (self.menu_selection + TestType::COUNT - 1) % TestType::COUNT;
@@ -98,17 +98,17 @@ impl Tuipe {
             }
             KeyCode::Enter => {
                 self.test.ttype = TestType::from_index(self.menu_selection);
-                self.state = State::OptMenu;
+                self.opt_state = OptMenu::Main;
                 self.menu_selection = 0
             }
             KeyCode::Char('q') => self.should_exit = true,
-            KeyCode::Esc => self.state = State::OptMenu,
+            KeyCode::Esc => self.opt_state = OptMenu::Main,
             _ => {}
         }
     }
 
     // Rendering
-    pub fn render_test_type_selector(&mut self, frame: &mut Frame) {
+    pub fn render_opt_testtype(&mut self, frame: &mut Frame) {
         let input_area = self.create_layout(40, 16, frame);
 
         let mut lines: Vec<Line<'_>> = Vec::new();

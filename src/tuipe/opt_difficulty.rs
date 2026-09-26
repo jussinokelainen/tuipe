@@ -1,5 +1,5 @@
 use crate::Tuipe;
-use crate::tuipe::State;
+use crate::tuipe::OptMenu;
 use crossterm::event::KeyCode;
 use ratatui::Frame;
 use ratatui::style::{Color, Style};
@@ -49,7 +49,7 @@ impl Difficulty {
 
 impl Tuipe {
     // Input controls
-    pub fn difficulty_selector_input(&mut self, keycode: crossterm::event::KeyCode) {
+    pub fn input_opt_difficulty(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
                 self.menu_selection =
@@ -60,17 +60,17 @@ impl Tuipe {
             }
             KeyCode::Enter => {
                 self.test.difficulty = Difficulty::from_index(self.menu_selection);
-                self.state = State::OptMenu;
+                self.opt_state = OptMenu::Main;
                 self.menu_selection = 0
             }
             KeyCode::Char('q') => self.should_exit = true,
-            KeyCode::Esc => self.state = State::OptMenu,
+            KeyCode::Esc => self.opt_state = OptMenu::Main,
             _ => {}
         }
     }
 
     // Rendering
-    pub fn render_difficulty_selector(&mut self, frame: &mut Frame) {
+    pub fn render_opt_difficulty(&mut self, frame: &mut Frame) {
         let input_area = self.create_layout(40, 16, frame);
 
         let mut lines: Vec<Line<'_>> = Vec::new();

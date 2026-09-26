@@ -7,10 +7,11 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Paragraph};
 
 pub enum OptMenu {
-    TestType,
+    Capitals,
     Difficulty,
     Language,
-    Capitals,
+    Main,
+    TestType,
 }
 
 impl OptMenu {
@@ -28,7 +29,7 @@ impl OptMenu {
 }
 impl Tuipe {
     // Input controls
-    pub fn opt_menu_controls(&mut self, keycode: crossterm::event::KeyCode) {
+    pub fn input_opt_main(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Char('k') => {
                 self.menu_selection = (self.menu_selection + OptMenu::COUNT - 1) % OptMenu::COUNT;
@@ -38,12 +39,7 @@ impl Tuipe {
             }
             KeyCode::Esc => self.state = State::MainMenu,
             KeyCode::Enter => {
-                match OptMenu::from_index(self.menu_selection) {
-                    OptMenu::TestType => self.state = State::TestTypeSelector,
-                    OptMenu::Difficulty => self.state = State::DifficultySelector,
-                    OptMenu::Language => self.state = State::LanguageSelector,
-                    OptMenu::Capitals => self.state = State::CapitalizationSelector,
-                }
+                self.opt_state = OptMenu::from_index(self.menu_selection);
                 self.menu_selection = 0;
             }
             KeyCode::Char('q') => self.should_exit = true,
@@ -51,8 +47,18 @@ impl Tuipe {
         }
     }
 
+    pub fn opt_menu_controls(&mut self, keycode: crossterm::event::KeyCode) {
+        match self.opt_state {
+            OptMenu::Capitals => self.input_opt_capitals(keycode),
+            OptMenu::Difficulty => self.input_opt_difficulty(keycode),
+            OptMenu::Language => self.input_opt_language(keycode),
+            OptMenu::Main => self.input_opt_main(keycode),
+            OptMenu::TestType => self.input_opt_testtype(keycode),
+        }
+    }
+
     // Rendering
-    pub fn render_opt_menu(&mut self, frame: &mut Frame) {
+    pub fn render_opt_main(&mut self, frame: &mut Frame) {
         let input_area = self.create_layout(40, 21, frame);
 
         let mut lines: Vec<Line<'_>> = Vec::new();
@@ -84,5 +90,15 @@ impl Tuipe {
             .centered()
             .block(Block::new());
         frame.render_widget(input, input_area);
+    }
+
+    pub fn render_opt(&mut self, frame: &mut Frame) {
+        match self.opt_state {
+            OptMenu::Capitals => self.render_opt_capitals(frame),
+            OptMenu::Difficulty => self.render_opt_difficulty(frame),
+            OptMenu::Language => self.render_opt_language(frame),
+            OptMenu::Main => self.render_opt_main(frame),
+            OptMenu::TestType => self.render_opt_testtype(frame),
+        }
     }
 }

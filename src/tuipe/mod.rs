@@ -8,6 +8,7 @@ mod opt_main;
 mod opt_testtype;
 mod test_over;
 mod test_running;
+use crate::tuipe::opt_main::OptMenu;
 pub use crate::tuipe::{
     opt_difficulty::Difficulty, opt_language::Language, opt_testtype::TestType,
 };
@@ -105,10 +106,6 @@ pub enum State {
     MainMenu,
     OptMenu,
     StatsScreen,
-    LanguageSelector,
-    TestTypeSelector,
-    DifficultySelector,
-    CapitalizationSelector,
     TestFinished,
     TestInterrupted,
     Typing,
@@ -302,6 +299,7 @@ fn database_exists() -> bool {
 pub struct Tuipe {
     version: &'static str,
     state: State,
+    opt_state: OptMenu,
     should_exit: bool,
     language: Language,
     save_success: Result<(), sqlite::Error>,
@@ -338,6 +336,7 @@ impl Tuipe {
                 None => "UNKNOWN",
             },
             state: State::MainMenu,
+            opt_state: OptMenu::Main,
             // This is a weird way to do this but it should work fine,
             // since if creating the database fails i want the program
             // to exit atleast for now, maybe later this will change
@@ -472,15 +471,11 @@ impl Tuipe {
         }
 
         match self.state {
-            State::CapitalizationSelector => self.render_capitalization_selector(frame),
-            State::DifficultySelector => self.render_difficulty_selector(frame),
-            State::LanguageSelector => self.render_language_selector(frame),
             State::MainMenu => self.render_main_menu(frame),
-            State::OptMenu => self.render_opt_menu(frame),
+            State::OptMenu => self.render_opt(frame),
             State::StatsScreen => self.render_stats_screen(frame),
             State::TestFinished => self.render_test_finished(frame),
             State::TestInterrupted => self.render_test_interrupted(frame),
-            State::TestTypeSelector => self.render_test_type_selector(frame),
             State::Typing => self.render_test(frame),
         }
     }
@@ -491,15 +486,11 @@ impl Tuipe {
 
             if let Some(key) = event::read()?.as_key_press_event() {
                 match self.state {
-                    State::CapitalizationSelector => self.capitalization_selector_input(key.code),
-                    State::DifficultySelector => self.difficulty_selector_input(key.code),
-                    State::LanguageSelector => self.language_selector_input(key.code),
                     State::MainMenu => self.main_menu_input(key.code),
                     State::OptMenu => self.opt_menu_controls(key.code),
                     State::StatsScreen => self.stats_screen_input(key.code),
                     State::TestFinished => self.end_screen_input(key.code),
                     State::TestInterrupted => self.end_screen_input(key.code),
-                    State::TestTypeSelector => self.test_type_selector_input(key.code),
                     State::Typing if key.kind == KeyEventKind::Press => {
                         self.typing_test_input(key.code)
                     }
