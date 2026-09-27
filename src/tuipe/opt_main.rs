@@ -1,5 +1,5 @@
 use crate::Tuipe;
-use crate::tuipe::State;
+use crate::tuipe::{Difficulty, Language, State, TestType};
 use crossterm::event::KeyCode;
 use ratatui::Frame;
 use ratatui::style::{Color, Style};
@@ -68,7 +68,14 @@ impl Tuipe {
         )));
         lines.push(Line::from(Span::raw("")));
 
-        let options = ["Test Type", "Difficulty", "Language", "Capital letters"];
+        let ttype_line = format!("Test Type: {}", TestType::as_string(&self.test.ttype));
+        let diff_line = format!(
+            "Difficulty: {}",
+            Difficulty::as_string(&self.test.difficulty)
+        );
+        let lang_line = format!("Language: {}", Language::as_string(&self.language));
+        let capital_line = format!("Capital letters: {}", self.test.capitals);
+        let options = [ttype_line, diff_line, lang_line, capital_line];
         for (i, name) in options.iter().enumerate() {
             let style = if i == self.menu_selection {
                 Style::default().fg(Color::Blue)
