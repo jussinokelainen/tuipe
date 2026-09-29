@@ -1,5 +1,5 @@
 APP := tuipe
-BIN := target/release/tuipe
+BIN := target/release/$(APP)
 VERSION := $(shell printf "r%s.%s" "$$(git rev-list --count HEAD)" "$$(git rev-parse --short HEAD)")
 
 RS_FILES := $(shell find src/ -name '*.rs')
@@ -9,7 +9,7 @@ DESTDIR ?=
 BINDIR := $(DESTDIR)$(PREFIX)/bin
 DATADIR := $(DESTDIR)$(PREFIX)/share/$(APP)
 
-.PHONY: build install uninstall clean run
+.PHONY: build install uninstall clean run debug
 
 build: $(BIN)
 
