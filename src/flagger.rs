@@ -35,27 +35,31 @@ pub struct Arguments {
 * A function to parse arguments, returns them as a struct with separate vectors
 * for normal flags, flags that take values and normal strings.
 *
-* As a parameter requires the arguments that will be parsed, and a Flagset struct
-* that contains valid arguments. If all flags are to be accepted, all structs in
-* the given Flagset struct must be empty. If that is the case, all flags will
-* be parsed and returned as normal boolean-style flags
+* As a parameter requires  a Flagset struct that contains valid arguments, and
+* optionally a vector of custom arguments, instead of taking them from std::env
+* If all flags are to be accepted, all structs in the given Flagset struct
+* must be empty. If that is the case, all flags will be parsed and returned
+* as normal boolean-style flags
 *
-* Returns an Arguments struct and a bool, which is true if there was an invalid
-* flag, e.g. a flag was called that isn't in the vector of valid flags, or a
-* flag that requires a value was the last argument
+* Returns a Result<Arguments> which is an error type if there was invalid flags
 */
-pub fn parse_args(input: Flagset) -> Result<Arguments> {
-    // Get all arguments and make them into a vector of Strings
-    let env_args = std::env::args();
-    let mut input_args = vec![];
-    for arg in env_args.enumerate() {
-        input_args.push(arg.1)
-    }
+pub fn parse_args(input: Flagset, custom_args: Option<Vec<String>>) -> Result<Arguments> {
+    let input_args = match custom_args {
+        Some(a) => a,
+        None => {
+            // Get all arguments and make them into a vector of Strings
+            let env_args = std::env::args();
+            let mut args = vec![];
+            for arg in env_args.enumerate() {
+                args.push(arg.1)
+            }
 
-    // Remove the program name from arguments
-    input_args.remove(0);
+            // Remove the program name from arguments before returning
+            args.remove(0);
+            args
+        }
+    };
 
-    let mut has_invalid = false;
     let mut accept_all = false;
     let mut flags = Arguments {
         flags: vec![],
@@ -69,7 +73,7 @@ pub fn parse_args(input: Flagset) -> Result<Arguments> {
     }
 
     // Check if a flag takes a value as a parameter
-    let requires_value = |flag: String, num: usize| -> bool {
+    let requires_value = |flag: &String, num: usize| -> bool {
         if input.value_flags.contains(&flag.as_str()) {
             return true;
         }
@@ -84,50 +88,98 @@ pub fn parse_args(input: Flagset) -> Result<Arguments> {
         false
     };
 
-    // Handles a single flag
-    let mut handle_flag = |flag: String, num: &mut usize| {
-        if requires_value(flag.clone(), *num) {
-            // Flag requires a value, check that it is not
-            // the last argument before taking the value
-            if (*num + 1) < input_args.len() {
-                // Get the next argument to be the value for this flag
-                let new_flag = (flag.clone().to_string(), input_args[*num + 1].clone());
-                flags.valued_flags.push(new_flag);
-                *num += 1;
-            } else {
-                has_invalid = true
+    // Handles a single flag, only returns an error when an invalid flag is given
+    let mut handle_flag = |flag: String, value: Option<&str>, num: &mut usize| -> Result<()> {
+        if requires_value(&flag, *num) {
+            match value {
+                Some(v) => {
+                    // Flag requires a value, and is of type --foo=bar
+                    // so use given value
+                    let new_flag = (flag, v.to_string());
+                    flags.valued_flags.push(new_flag);
+                    Ok(())
+                }
+                None => {
+                    // Flag requires the next argument as its value, check that it is not
+                    // the last argument before taking the value
+                    if (*num + 1) < input_args.len() {
+                        // Get the next argument to be the value for this flag
+                        let new_flag = (flag, input_args[*num + 1].clone());
+                        flags.valued_flags.push(new_flag);
+                        *num += 1;
+                        Ok(())
+                    } else {
+                        Err(color_eyre::eyre::eyre!("Invalid flag: {}", flag))
+                    }
+                }
             }
         } else {
-            if input.flags.contains(&flag.as_str())
-                || input.opt_flags.contains(&flag.as_str())
-                || accept_all
-            {
-                flags.flags.push(flag.clone().to_string());
-            } else {
-                has_invalid = true;
+            match value {
+                Some(_) => Err(color_eyre::eyre::eyre!(
+                    "Value given for a non-valued flag: {}",
+                    flag
+                )),
+                None => {
+                    if input.flags.contains(&flag.as_str())
+                        || input.opt_flags.contains(&flag.as_str())
+                        || accept_all
+                    {
+                        flags.flags.push(flag.clone().to_string());
+                        Ok(())
+                    } else {
+                        Err(color_eyre::eyre::eyre!("Invalid flag: {}", flag))
+                    }
+                }
             }
         }
     };
 
     let mut count = 0;
     while count < input_args.len() {
-        if input_args[count].starts_with("--") {
-            let flag = &input_args[count][2..];
-            handle_flag(flag.to_string(), &mut count)
-        } else if input_args[count].starts_with('-') {
-            let flag = &input_args[count][1..];
-            for c in flag.chars() {
-                handle_flag(c.to_string(), &mut count)
+        if input_args[count].contains('=') {
+            if input_args[count].starts_with("--") {
+                let flag_with_value = &input_args[count][2..];
+                if let Some((flag, value)) = flag_with_value.split_once('=') {
+                    handle_flag(flag.to_string(), Some(value), &mut count)?;
+                }
+            } else if input_args[count].starts_with('-') {
+                let full_flag = &input_args[count][1..];
+                if let Some(equals_pos) = full_flag.find('=') {
+                    let last_flag_pos = equals_pos - 1;
+                    // Handle flags that were not the last one as normal ones
+                    // e.g. --abc=foo -> a and b as normal, c as c=foo
+                    for i in 0..last_flag_pos {
+                        if let Some(flag) = full_flag.chars().nth(i) {
+                            handle_flag(flag.to_string(), None, &mut count)?;
+                        }
+                    }
+
+                    // Handle the last character before the '='
+                    // as the flag that takes the string after the '=' as its value
+                    if let Some(val_flag) = full_flag.chars().nth(last_flag_pos) {
+                        if let Some((_, value)) = full_flag.split_once('=') {
+                            handle_flag(val_flag.to_string(), Some(value), &mut count)?;
+                        }
+                    }
+                }
+            } else {
+                flags.normal_str.push(input_args[count].clone());
             }
         } else {
-            flags.normal_str.push(input_args[count].clone());
+            if input_args[count].starts_with("--") {
+                let flag = &input_args[count][2..];
+                handle_flag(flag.to_string(), None, &mut count)?;
+            } else if input_args[count].starts_with('-') {
+                let flag = &input_args[count][1..];
+                for c in flag.chars() {
+                    handle_flag(c.to_string(), None, &mut count)?;
+                }
+            } else {
+                flags.normal_str.push(input_args[count].clone());
+            }
         }
         count += 1;
     }
 
-    if has_invalid {
-        Err(color_eyre::eyre::eyre!("Invalid Flags."))
-    } else {
-        Ok(flags)
-    }
+    Ok(flags)
 }

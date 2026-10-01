@@ -111,7 +111,7 @@ fn main() -> Result<()> {
         value_flags: Vec::new(),
         opt_flags: Vec::new(),
     };
-    let parsed_args = flagger::parse_args(valid_flags)?;
+    let parsed_args = flagger::parse_args(valid_flags, None)?;
     for flag in parsed_args.flags {
         match flag.as_str() {
             "fix-database" => {
