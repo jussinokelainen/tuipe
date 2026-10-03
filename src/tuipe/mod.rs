@@ -25,26 +25,44 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, fs, fs::File, fs::create_dir_all, io::Error};
 
-struct Opts {
-    ttype: TestType,
-    difficulty: Difficulty,
-    language: Language,
-    capitals: bool,
-
-    state: OptMenu,
+// Main state enum for the program
+enum State {
+    MainMenu,
+    OptMenu,
+    StatsScreen,
+    TestFinished,
+    TestInterrupted,
+    Typing,
 }
 
-impl Opts {
-    fn new() -> Self {
-        Self {
-            ttype: TestType::Words25,
-            difficulty: Difficulty::Normal,
-            language: Language::English,
-            capitals: false,
+// Main struct for the program
+pub struct Tuipe {
+    save_success: Result<(), sqlite::Error>,
+    should_exit: bool,
+    state: State,
+    version: &'static str,
 
-            state: OptMenu::Main,
-        }
-    }
+    menu_selection: usize,
+
+    opts: Opts,
+    stats: FinalStats,
+    test: Test,
+
+    input: Vec<String>,
+    input_buffer: Vec<u8>,
+
+    character_index: usize,
+    word_index: usize,
+    words: Vec<String>,
+}
+
+struct Opts {
+    capitals: bool,
+    difficulty: Difficulty,
+    language: Language,
+    ttype: TestType,
+
+    state: OptMenu,
 }
 
 struct Test {
@@ -54,6 +72,47 @@ struct Test {
     is_timed: bool,
     start_time: u128,
     time_limit: usize,
+}
+
+struct FinalStats {
+    accuracy: f64,
+    time: f64,
+    time_is_set: bool,
+    typed_characters: usize,
+    typed_words: usize,
+    wpm: f64,
+    wpm_raw: f64,
+}
+
+pub struct DBdata {
+    pub accuracy: f64,
+    pub characters_typed: u16,
+    pub language: String,
+    pub raw_wpm: f64,
+    pub test_type: String,
+    pub time: u128,
+    pub wpm: f64,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Config {
+    capitals: bool,
+    difficulty: String,
+    language: String,
+    test_type: String,
+}
+
+impl Opts {
+    fn new() -> Self {
+        Self {
+            capitals: false,
+            difficulty: Difficulty::Normal,
+            language: Language::English,
+            ttype: TestType::Words25,
+
+            state: OptMenu::Main,
+        }
+    }
 }
 
 impl Test {
@@ -69,70 +128,224 @@ impl Test {
     }
 }
 
-struct FinalStats {
-    wpm: f64,
-    wpm_raw: f64,
-    accuracy: f64,
-    time: f64,
-    time_is_set: bool,
-    typed_words: usize,
-    typed_characters: usize,
-}
-
 impl FinalStats {
     fn new() -> Self {
         Self {
-            wpm: 0.0,
-            wpm_raw: 0.0,
             accuracy: 0.0,
             time: 0.0,
             time_is_set: false,
-            typed_words: 0,
             typed_characters: 0,
+            typed_words: 0,
+            wpm: 0.0,
+            wpm_raw: 0.0,
         }
     }
-}
-
-pub struct DBdata {
-    pub wpm: f64,
-    pub raw_wpm: f64,
-    pub accuracy: f64,
-    pub test_type: String,
-    pub language: String,
-    pub characters_typed: u16,
-    pub time: u128,
 }
 
 impl DBdata {
     pub fn new() -> Self {
         Self {
-            wpm: 0.0,
-            raw_wpm: 0.0,
             accuracy: 0.0,
-            test_type: String::new(),
-            language: String::new(),
             characters_typed: 0,
+            language: String::new(),
+            raw_wpm: 0.0,
+            test_type: String::new(),
             time: 0,
+            wpm: 0.0,
         }
     }
 }
 
-// Main state enum for the program
-enum State {
-    MainMenu,
-    OptMenu,
-    StatsScreen,
-    TestFinished,
-    TestInterrupted,
-    Typing,
-}
+impl Tuipe {
+    pub fn new() -> Self {
+        let mut opts_struct = Opts::new();
+        match load_configs() {
+            Ok((lang, ttype, diff, caps)) => {
+                opts_struct.language = lang;
+                opts_struct.ttype = ttype;
+                opts_struct.difficulty = diff;
+                opts_struct.capitals = caps
+            }
+            Err(_) => {}
+        }
+        Self {
+            save_success: Ok(()),
+            // This is a weird way to do this but it should work fine,
+            // since if creating the database fails i want the program
+            // to exit atleast for now, maybe later this will change
+            should_exit: !database_exists(),
+            state: State::MainMenu,
+            version: match option_env!("VERSION") {
+                Some(version_num) => version_num,
+                None => "UNKNOWN",
+            },
 
-#[derive(Serialize, Deserialize)]
-struct Config {
-    language: String,
-    test_type: String,
-    difficulty: String,
-    capitals: bool,
+            menu_selection: 0,
+
+            opts: opts_struct,
+            stats: FinalStats::new(),
+            test: Test::new(),
+
+            input: vec![String::new()],
+            input_buffer: vec![0],
+
+            character_index: 0,
+            word_index: 0,
+            words: vec![String::new()],
+        }
+    }
+
+    // Reset all required data fields for a new game
+    fn restart_test(&mut self) {
+        self.state = State::Typing;
+        self.save_success = Ok(());
+
+        (self.test.is_timed, self.test.time_limit) = TestType::is_timed(&self.opts.ttype);
+        self.test.is_started = false;
+        self.test.start_time = 0;
+        self.test.correct_chars = 0;
+        self.test.incorrect_chars = 0;
+
+        self.stats = FinalStats::new();
+
+        self.input = vec![String::new()];
+        self.input_buffer = vec![0];
+
+        self.character_index = 0;
+        self.word_index = 0;
+        self.words = get_words_as_vector(&self.opts.language, &self.opts.ttype, self.opts.capitals);
+    }
+
+    // Checks whether the test is over, by either the time being up in a timed
+    // test, or in a normal words test typing the last word correct or entering
+    // a new word after the last word (pressing space during the last word)
+    fn check_is_test_done(&self) -> bool {
+        let words_len = self.words.len();
+
+        // This check is needed so the program doesn't index the
+        // vectors on startup, since both vectors are initialized with
+        // the same length
+        if words_len > 1 {
+            if words_len < self.input.len() {
+                return true;
+            }
+            if words_len == self.input.len() {
+                if self.words[words_len - 1] == self.input[words_len - 1] {
+                    return true;
+                }
+            }
+        }
+
+        // Check if the time is up if typing a timed test
+        if self.test.is_timed && self.test.is_started {
+            let elapsed_test_time = (get_current_time_as_millis() - self.test.start_time) as f64;
+            // Divide elapsed time by 1000 to convert it from milliseconds to seconds
+            if (elapsed_test_time / 1000.0) >= self.test.time_limit as f64 {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    // Function for rendering screens, returns a Rect positioned at the center of
+    // the screen with maximum width and height of given parameters
+    fn create_layout(&self, width: u16, height: u16, frame: &mut Frame) -> Rect {
+        let layout_vert = Layout::default()
+            .direction(Direction::Vertical)
+            .flex(Flex::Center)
+            .constraints([
+                Constraint::Min(0),
+                Constraint::Max(height),
+                Constraint::Min(0),
+            ])
+            .split(frame.area());
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .flex(Flex::Center)
+            .constraints([
+                Constraint::Min(0),
+                Constraint::Max(width),
+                Constraint::Min(0),
+            ])
+            .split(layout_vert[1]);
+        layout_horizontal[1]
+    }
+
+    // Adds the main menu controls as dark gray to the lines vector
+    fn add_menu_controls(&self, lines: &mut Vec<Line<'_>>) {
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::raw("")));
+        lines.push(Line::from(Span::styled(
+            "Move: j/k",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Select: Enter",
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Quit: q",
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    // Adds the control info for the option menus as dark gray to given lines vector
+    fn add_opt_menu_controls(&self, lines: &mut Vec<Line<'_>>) {
+        self.add_menu_controls(lines);
+        lines.push(Line::from(Span::styled(
+            "Back: Esc",
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    // The main render function of the program
+    pub fn render(&mut self, frame: &mut Frame) {
+        // check if test done instead of self.words == self.input
+        if !self.stats.time_is_set && self.check_is_test_done() {
+            self.set_final_stats(true);
+            self.state = State::TestFinished;
+        }
+
+        match self.state {
+            State::MainMenu => self.render_main_menu(frame),
+            State::OptMenu => self.render_opt(frame),
+            State::StatsScreen => self.render_stats_screen(frame),
+            State::TestFinished => self.render_test_finished(frame),
+            State::TestInterrupted => self.render_test_interrupted(frame),
+            State::Typing => self.render_test(frame),
+        }
+    }
+
+    pub fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+        loop {
+            terminal.draw(|frame| self.render(frame))?;
+
+            if let Some(key) = event::read()?.as_key_press_event() {
+                match self.state {
+                    State::MainMenu => self.main_menu_input(key.code),
+                    State::OptMenu => self.opt_menu_controls(key.code),
+                    State::StatsScreen => self.stats_screen_input(key.code),
+                    State::TestFinished => self.end_screen_input(key.code),
+                    State::TestInterrupted => self.end_screen_input(key.code),
+                    State::Typing if key.kind == KeyEventKind::Press => {
+                        self.typing_test_input(key.code)
+                    }
+                    State::Typing => {}
+                }
+            }
+            if self.should_exit {
+                save_configs(
+                    self.opts.language,
+                    self.opts.ttype,
+                    self.opts.difficulty,
+                    self.opts.capitals,
+                )?;
+                log::info!("Application stopped");
+                return Ok(());
+            }
+        }
+    }
 }
 
 // Returns a vector containing the words for the typing test
@@ -308,218 +521,5 @@ fn database_exists() -> bool {
             if res.is_ok() { true } else { false }
         }
         None => false,
-    }
-}
-
-// Main struct for the program
-pub struct Tuipe {
-    version: &'static str,
-    state: State,
-    should_exit: bool,
-    save_success: Result<(), sqlite::Error>,
-
-    menu_selection: usize,
-
-    test: Test,
-    stats: FinalStats,
-    opts: Opts,
-
-    input: Vec<String>,
-    input_buffer: Vec<u8>,
-
-    character_index: usize,
-    word_index: usize,
-    words: Vec<String>,
-}
-
-impl Tuipe {
-    pub fn new() -> Self {
-        let mut opts_struct = Opts::new();
-        match load_configs() {
-            Ok((lang, ttype, diff, caps)) => {
-                opts_struct.language = lang;
-                opts_struct.ttype = ttype;
-                opts_struct.difficulty = diff;
-                opts_struct.capitals = caps
-            }
-            Err(_) => {}
-        }
-        Self {
-            version: match option_env!("VERSION") {
-                Some(version_num) => version_num,
-                None => "UNKNOWN",
-            },
-            state: State::MainMenu,
-            // This is a weird way to do this but it should work fine,
-            // since if creating the database fails i want the program
-            // to exit atleast for now, maybe later this will change
-            should_exit: !database_exists(),
-            save_success: Ok(()),
-
-            menu_selection: 0,
-
-            test: Test::new(),
-            stats: FinalStats::new(),
-            opts: opts_struct,
-
-            input: vec![String::new()],
-            input_buffer: vec![0],
-
-            character_index: 0,
-            word_index: 0,
-            words: vec![String::new()],
-        }
-    }
-
-    // Reset all required data fields for a new game
-    fn restart_test(&mut self) {
-        self.state = State::Typing;
-        self.save_success = Ok(());
-
-        (self.test.is_timed, self.test.time_limit) = TestType::is_timed(&self.opts.ttype);
-        self.test.is_started = false;
-        self.test.start_time = 0;
-        self.test.correct_chars = 0;
-        self.test.incorrect_chars = 0;
-
-        self.stats = FinalStats::new();
-
-        self.input = vec![String::new()];
-        self.input_buffer = vec![0];
-
-        self.character_index = 0;
-        self.word_index = 0;
-        self.words = get_words_as_vector(&self.opts.language, &self.opts.ttype, self.opts.capitals);
-    }
-
-    // Checks whether the test is over, by either the time being up in a timed
-    // test, or in a normal words test typing the last word correct or entering
-    // a new word after the last word (pressing space during the last word)
-    fn check_is_test_done(&self) -> bool {
-        let words_len = self.words.len();
-
-        // This check is needed so the program doesn't index the
-        // vectors on startup, since both vectors are initialized with
-        // the same length
-        if words_len > 1 {
-            if words_len < self.input.len() {
-                return true;
-            }
-            if words_len == self.input.len() {
-                if self.words[words_len - 1] == self.input[words_len - 1] {
-                    return true;
-                }
-            }
-        }
-
-        // Check if the time is up if typing a timed test
-        if self.test.is_timed && self.test.is_started {
-            let elapsed_test_time = (get_current_time_as_millis() - self.test.start_time) as f64;
-            // Divide elapsed time by 1000 to convert it from milliseconds to seconds
-            if (elapsed_test_time / 1000.0) >= self.test.time_limit as f64 {
-                return true;
-            }
-        }
-
-        false
-    }
-
-    // Function for rendering screens, returns a Rect positioned at the center of
-    // the screen with maximum width and height of given parameters
-    fn create_layout(&self, width: u16, height: u16, frame: &mut Frame) -> Rect {
-        let layout_vert = Layout::default()
-            .direction(Direction::Vertical)
-            .flex(Flex::Center)
-            .constraints([
-                Constraint::Min(0),
-                Constraint::Max(height),
-                Constraint::Min(0),
-            ])
-            .split(frame.area());
-        let layout_horizontal = Layout::default()
-            .direction(Direction::Horizontal)
-            .flex(Flex::Center)
-            .constraints([
-                Constraint::Min(0),
-                Constraint::Max(width),
-                Constraint::Min(0),
-            ])
-            .split(layout_vert[1]);
-        layout_horizontal[1]
-    }
-
-    // Adds the main menu controls as dark gray to the lines vector
-    fn add_menu_controls(&self, lines: &mut Vec<Line<'_>>) {
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::raw("")));
-        lines.push(Line::from(Span::styled(
-            "Move: j/k",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Select: Enter",
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(Span::styled(
-            "Quit: q",
-            Style::default().fg(Color::DarkGray),
-        )));
-    }
-
-    // Adds the control info for the option menus as dark gray to given lines vector
-    fn add_opt_menu_controls(&self, lines: &mut Vec<Line<'_>>) {
-        self.add_menu_controls(lines);
-        lines.push(Line::from(Span::styled(
-            "Back: Esc",
-            Style::default().fg(Color::DarkGray),
-        )));
-    }
-
-    // The main render function of the program
-    pub fn render(&mut self, frame: &mut Frame) {
-        // check if test done instead of self.words == self.input
-        if !self.stats.time_is_set && self.check_is_test_done() {
-            self.set_final_stats(true);
-            self.state = State::TestFinished;
-        }
-
-        match self.state {
-            State::MainMenu => self.render_main_menu(frame),
-            State::OptMenu => self.render_opt(frame),
-            State::StatsScreen => self.render_stats_screen(frame),
-            State::TestFinished => self.render_test_finished(frame),
-            State::TestInterrupted => self.render_test_interrupted(frame),
-            State::Typing => self.render_test(frame),
-        }
-    }
-
-    pub fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
-        loop {
-            terminal.draw(|frame| self.render(frame))?;
-
-            if let Some(key) = event::read()?.as_key_press_event() {
-                match self.state {
-                    State::MainMenu => self.main_menu_input(key.code),
-                    State::OptMenu => self.opt_menu_controls(key.code),
-                    State::StatsScreen => self.stats_screen_input(key.code),
-                    State::TestFinished => self.end_screen_input(key.code),
-                    State::TestInterrupted => self.end_screen_input(key.code),
-                    State::Typing if key.kind == KeyEventKind::Press => {
-                        self.typing_test_input(key.code)
-                    }
-                    State::Typing => {}
-                }
-            }
-            if self.should_exit {
-                save_configs(
-                    self.opts.language,
-                    self.opts.ttype,
-                    self.opts.difficulty,
-                    self.opts.capitals,
-                )?;
-                log::info!("Application stopped");
-                return Ok(());
-            }
-        }
     }
 }
