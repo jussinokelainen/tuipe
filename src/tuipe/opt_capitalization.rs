@@ -11,10 +11,10 @@ impl Tuipe {
     pub fn input_opt_capitals(&mut self, keycode: crossterm::event::KeyCode) {
         match keycode {
             KeyCode::Enter => {
-                self.test.capitals = !self.test.capitals;
+                self.opts.capitals = !self.opts.capitals;
             }
             KeyCode::Char('q') => self.should_exit = true,
-            KeyCode::Esc => self.opt_state = OptMenu::Main,
+            KeyCode::Esc => self.opts.state = OptMenu::Main,
             _ => {}
         }
     }
@@ -25,7 +25,7 @@ impl Tuipe {
 
         let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
-            format!("Current capitalization: {}", self.test.capitals),
+            format!("Current capitalization: {}", self.opts.capitals),
             Style::default().fg(Color::Green),
         )));
         lines.push(Line::from(Span::raw("")));

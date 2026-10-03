@@ -21,9 +21,9 @@ impl Tuipe {
             self.stats.wpm,
             self.stats.wpm_raw,
             self.stats.accuracy,
-            TestType::as_string(&self.test.ttype),
-            Language::as_string(&self.language),
-            self.test.capitals,
+            TestType::as_string(&self.opts.ttype),
+            Language::as_string(&self.opts.language),
+            self.opts.capitals,
             self.stats.typed_characters,
             self.stats.time
         );
@@ -35,8 +35,8 @@ impl Tuipe {
                     self.stats.wpm,
                     self.stats.wpm_raw,
                     self.stats.accuracy,
-                    TestType::as_string(&self.test.ttype),
-                    Language::as_string(&self.language),
+                    TestType::as_string(&self.opts.ttype),
+                    Language::as_string(&self.opts.language),
                     self.stats.typed_characters,
                     self.stats.time
                 );

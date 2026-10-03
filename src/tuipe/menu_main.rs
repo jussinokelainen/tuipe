@@ -64,22 +64,22 @@ impl Tuipe {
             "Current settings:",
             Style::default().fg(Color::Cyan),
         )));
-        let ttype = TestType::as_string(&self.test.ttype);
+        let ttype = TestType::as_string(&self.opts.ttype);
         lines.push(Line::from(Span::styled(
             format!("Test type: {ttype}"),
             Style::default().fg(Color::LightCyan),
         )));
-        let lang = Language::as_string(&self.language);
+        let lang = Language::as_string(&self.opts.language);
         lines.push(Line::from(Span::styled(
             format!("Language: {lang}"),
             Style::default().fg(Color::LightCyan),
         )));
-        let difficulty = Difficulty::as_string(&self.test.difficulty);
+        let difficulty = Difficulty::as_string(&self.opts.difficulty);
         lines.push(Line::from(Span::styled(
             format!("Difficulty: {difficulty}"),
             Style::default().fg(Color::LightCyan),
         )));
-        let capitals = self.test.capitals;
+        let capitals = self.opts.capitals;
         lines.push(Line::from(Span::styled(
             format!("Capital letters: {capitals}"),
             Style::default().fg(Color::LightCyan),

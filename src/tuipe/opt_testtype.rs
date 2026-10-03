@@ -97,12 +97,12 @@ impl Tuipe {
                 self.menu_selection = (self.menu_selection + 1) % TestType::COUNT;
             }
             KeyCode::Enter => {
-                self.test.ttype = TestType::from_index(self.menu_selection);
-                self.opt_state = OptMenu::Main;
+                self.opts.ttype = TestType::from_index(self.menu_selection);
+                self.opts.state = OptMenu::Main;
                 self.menu_selection = 0
             }
             KeyCode::Char('q') => self.should_exit = true,
-            KeyCode::Esc => self.opt_state = OptMenu::Main,
+            KeyCode::Esc => self.opts.state = OptMenu::Main,
             _ => {}
         }
     }

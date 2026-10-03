@@ -24,7 +24,7 @@ impl Tuipe {
 
         let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
-            format!("Test failed: {}", TestType::as_string(&self.test.ttype)),
+            format!("Test failed: {}", TestType::as_string(&self.opts.ttype)),
             Style::default().fg(Color::Red),
         )));
 
@@ -72,7 +72,7 @@ impl Tuipe {
 
         let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
-            format!("Test done: {}", TestType::as_string(&self.test.ttype)),
+            format!("Test done: {}", TestType::as_string(&self.opts.ttype)),
             Style::default().fg(Color::Green),
         )));
 

@@ -25,30 +25,46 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, fs, fs::File, fs::create_dir_all, io::Error};
 
-struct Test {
-    capitals: bool,
-    correct_chars: u16,
+struct Opts {
+    ttype: TestType,
     difficulty: Difficulty,
+    language: Language,
+    capitals: bool,
+
+    state: OptMenu,
+}
+
+impl Opts {
+    fn new() -> Self {
+        Self {
+            ttype: TestType::Words25,
+            difficulty: Difficulty::Normal,
+            language: Language::English,
+            capitals: false,
+
+            state: OptMenu::Main,
+        }
+    }
+}
+
+struct Test {
+    correct_chars: u16,
     incorrect_chars: u16,
     is_started: bool,
     is_timed: bool,
     start_time: u128,
     time_limit: usize,
-    ttype: TestType,
 }
 
 impl Test {
     fn new() -> Self {
         Self {
-            capitals: false,
             correct_chars: 0,
-            difficulty: Difficulty::Normal,
             incorrect_chars: 0,
             is_started: false,
             is_timed: false,
             start_time: 0,
             time_limit: 0,
-            ttype: TestType::Words25,
         }
     }
 }
@@ -299,15 +315,14 @@ fn database_exists() -> bool {
 pub struct Tuipe {
     version: &'static str,
     state: State,
-    opt_state: OptMenu,
     should_exit: bool,
-    language: Language,
     save_success: Result<(), sqlite::Error>,
 
     menu_selection: usize,
 
     test: Test,
     stats: FinalStats,
+    opts: Opts,
 
     input: Vec<String>,
     input_buffer: Vec<u8>,
@@ -319,14 +334,13 @@ pub struct Tuipe {
 
 impl Tuipe {
     pub fn new() -> Self {
-        let mut test_struct = Test::new();
-        let mut test_lang = Language::English;
+        let mut opts_struct = Opts::new();
         match load_configs() {
             Ok((lang, ttype, diff, caps)) => {
-                test_lang = lang;
-                test_struct.ttype = ttype;
-                test_struct.difficulty = diff;
-                test_struct.capitals = caps
+                opts_struct.language = lang;
+                opts_struct.ttype = ttype;
+                opts_struct.difficulty = diff;
+                opts_struct.capitals = caps
             }
             Err(_) => {}
         }
@@ -336,18 +350,17 @@ impl Tuipe {
                 None => "UNKNOWN",
             },
             state: State::MainMenu,
-            opt_state: OptMenu::Main,
             // This is a weird way to do this but it should work fine,
             // since if creating the database fails i want the program
             // to exit atleast for now, maybe later this will change
             should_exit: !database_exists(),
-            language: test_lang,
             save_success: Ok(()),
 
             menu_selection: 0,
 
-            test: test_struct,
+            test: Test::new(),
             stats: FinalStats::new(),
+            opts: opts_struct,
 
             input: vec![String::new()],
             input_buffer: vec![0],
@@ -363,7 +376,7 @@ impl Tuipe {
         self.state = State::Typing;
         self.save_success = Ok(());
 
-        (self.test.is_timed, self.test.time_limit) = TestType::is_timed(&self.test.ttype);
+        (self.test.is_timed, self.test.time_limit) = TestType::is_timed(&self.opts.ttype);
         self.test.is_started = false;
         self.test.start_time = 0;
         self.test.correct_chars = 0;
@@ -376,7 +389,7 @@ impl Tuipe {
 
         self.character_index = 0;
         self.word_index = 0;
-        self.words = get_words_as_vector(&self.language, &self.test.ttype, self.test.capitals);
+        self.words = get_words_as_vector(&self.opts.language, &self.opts.ttype, self.opts.capitals);
     }
 
     // Checks whether the test is over, by either the time being up in a timed
@@ -499,10 +512,10 @@ impl Tuipe {
             }
             if self.should_exit {
                 save_configs(
-                    self.language,
-                    self.test.ttype,
-                    self.test.difficulty,
-                    self.test.capitals,
+                    self.opts.language,
+                    self.opts.ttype,
+                    self.opts.difficulty,
+                    self.opts.capitals,
                 )?;
                 log::info!("Application stopped");
                 return Ok(());

@@ -39,7 +39,7 @@ impl Tuipe {
             }
             KeyCode::Esc => self.state = State::MainMenu,
             KeyCode::Enter => {
-                self.opt_state = OptMenu::from_index(self.menu_selection);
+                self.opts.state = OptMenu::from_index(self.menu_selection);
                 self.menu_selection = 0;
             }
             KeyCode::Char('q') => self.should_exit = true,
@@ -48,7 +48,7 @@ impl Tuipe {
     }
 
     pub fn opt_menu_controls(&mut self, keycode: crossterm::event::KeyCode) {
-        match self.opt_state {
+        match self.opts.state {
             OptMenu::Capitals => self.input_opt_capitals(keycode),
             OptMenu::Difficulty => self.input_opt_difficulty(keycode),
             OptMenu::Language => self.input_opt_language(keycode),
@@ -68,13 +68,13 @@ impl Tuipe {
         )));
         lines.push(Line::from(Span::raw("")));
 
-        let ttype_line = format!("Test Type: {}", TestType::as_string(&self.test.ttype));
+        let ttype_line = format!("Test Type: {}", TestType::as_string(&self.opts.ttype));
         let diff_line = format!(
             "Difficulty: {}",
-            Difficulty::as_string(&self.test.difficulty)
+            Difficulty::as_string(&self.opts.difficulty)
         );
-        let lang_line = format!("Language: {}", Language::as_string(&self.language));
-        let capital_line = format!("Capital letters: {}", self.test.capitals);
+        let lang_line = format!("Language: {}", Language::as_string(&self.opts.language));
+        let capital_line = format!("Capital letters: {}", self.opts.capitals);
         let options = [ttype_line, diff_line, lang_line, capital_line];
         for (i, name) in options.iter().enumerate() {
             let style = if i == self.menu_selection {
@@ -100,7 +100,7 @@ impl Tuipe {
     }
 
     pub fn render_opt(&mut self, frame: &mut Frame) {
-        match self.opt_state {
+        match self.opts.state {
             OptMenu::Capitals => self.render_opt_capitals(frame),
             OptMenu::Difficulty => self.render_opt_difficulty(frame),
             OptMenu::Language => self.render_opt_language(frame),

@@ -71,12 +71,12 @@ impl Tuipe {
                 self.menu_selection = (self.menu_selection + 1) % Language::COUNT;
             }
             KeyCode::Enter => {
-                self.language = Language::from_index(self.menu_selection);
-                self.opt_state = OptMenu::Main;
+                self.opts.language = Language::from_index(self.menu_selection);
+                self.opts.state = OptMenu::Main;
                 self.menu_selection = 0
             }
             KeyCode::Char('q') => self.should_exit = true,
-            KeyCode::Esc => self.opt_state = OptMenu::Main,
+            KeyCode::Esc => self.opts.state = OptMenu::Main,
             _ => {}
         }
     }

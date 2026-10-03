@@ -192,7 +192,7 @@ impl Tuipe {
                 .chars()
                 .nth(self.character_index)
         {
-            if self.test.difficulty == Difficulty::Master {
+            if self.opts.difficulty == Difficulty::Master {
                 // End the test if on Master difficulty and input has
                 // incorrect character
                 self.state = State::TestInterrupted;
@@ -217,8 +217,8 @@ impl Tuipe {
 
         // Check that the word is correct
         if self.words[w_idx] != self.input[w_idx] {
-            if self.test.difficulty == Difficulty::Master
-                || self.test.difficulty == Difficulty::Expert
+            if self.opts.difficulty == Difficulty::Master
+                || self.opts.difficulty == Difficulty::Expert
             {
                 // If on master or expert, end the test
                 self.state = State::TestInterrupted;
