@@ -25,20 +25,20 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, fs, fs::File, fs::create_dir_all, io::Error};
 
-pub struct Test {
-    pub capitals: bool,
-    pub correct_chars: u16,
-    pub difficulty: Difficulty,
-    pub incorrect_chars: u16,
-    pub is_started: bool,
-    pub is_timed: bool,
-    pub start_time: u128,
-    pub time_limit: usize,
-    pub ttype: TestType,
+struct Test {
+    capitals: bool,
+    correct_chars: u16,
+    difficulty: Difficulty,
+    incorrect_chars: u16,
+    is_started: bool,
+    is_timed: bool,
+    start_time: u128,
+    time_limit: usize,
+    ttype: TestType,
 }
 
 impl Test {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             capitals: false,
             correct_chars: 0,
@@ -53,18 +53,18 @@ impl Test {
     }
 }
 
-pub struct FinalStats {
-    pub wpm: f64,
-    pub wpm_raw: f64,
-    pub accuracy: f64,
-    pub time: f64,
-    pub time_is_set: bool,
-    pub typed_words: usize,
-    pub typed_characters: usize,
+struct FinalStats {
+    wpm: f64,
+    wpm_raw: f64,
+    accuracy: f64,
+    time: f64,
+    time_is_set: bool,
+    typed_words: usize,
+    typed_characters: usize,
 }
 
 impl FinalStats {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             wpm: 0.0,
             wpm_raw: 0.0,
@@ -102,7 +102,7 @@ impl DBdata {
 }
 
 // Main state enum for the program
-pub enum State {
+enum State {
     MainMenu,
     OptMenu,
     StatsScreen,
@@ -112,11 +112,11 @@ pub enum State {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Config {
-    pub language: String,
-    pub test_type: String,
-    pub difficulty: String,
-    pub capitals: bool,
+struct Config {
+    language: String,
+    test_type: String,
+    difficulty: String,
+    capitals: bool,
 }
 
 // Returns a vector containing the words for the typing test

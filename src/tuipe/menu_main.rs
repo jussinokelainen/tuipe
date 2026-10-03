@@ -52,7 +52,7 @@ impl Tuipe {
 
     // Rendering
     pub fn render_main_menu(&mut self, frame: &mut Frame) {
-        let input_area = self.create_layout(40, 21, frame);
+        let input_area = self.create_layout(40, 18, frame);
 
         let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
