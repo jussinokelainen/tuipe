@@ -44,6 +44,7 @@ pub struct Arguments {
 * Returns a Result<Arguments> which is an error type if there was invalid flags
 */
 pub fn parse_args(input: Flagset, custom_args: Option<Vec<String>>) -> Result<Arguments> {
+    let mut only_parse_as_normal = false;
     let input_args = match custom_args {
         Some(a) => a,
         None => {
@@ -136,7 +137,14 @@ pub fn parse_args(input: Flagset, custom_args: Option<Vec<String>>) -> Result<Ar
 
     let mut count = 0;
     while count < input_args.len() {
-        if input_args[count].contains('=') {
+        if input_args[count] == "--" {
+            only_parse_as_normal = true;
+            count += 1;
+            continue;
+        }
+        if only_parse_as_normal {
+            flags.normal_str.push(input_args[count].clone());
+        } else if input_args[count].contains('=') {
             if input_args[count].starts_with("--") {
                 let flag_with_value = &input_args[count][2..];
                 if let Some((flag, value)) = flag_with_value.split_once('=') {
