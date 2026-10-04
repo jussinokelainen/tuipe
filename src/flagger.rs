@@ -16,6 +16,17 @@ pub struct Flagset {
     pub opt_flags: Vec<&'static str>,
 }
 
+#[allow(dead_code)]
+impl Flagset {
+    pub fn new() -> Self {
+        Self {
+            flags: Vec::new(),
+            value_flags: Vec::new(),
+            opt_flags: Vec::new(),
+        }
+    }
+}
+
 /*
 * A struct that gets returned by parse_args. Only flags that were contained in
 * the arguments are in the returned struct.
