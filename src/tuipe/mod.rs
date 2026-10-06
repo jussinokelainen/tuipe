@@ -5,6 +5,7 @@ mod opt_capitalization;
 mod opt_difficulty;
 mod opt_language;
 mod opt_main;
+mod opt_numbers;
 mod opt_testtype;
 mod test_over;
 mod test_running;
@@ -60,6 +61,7 @@ struct Opts {
     capitals: bool,
     difficulty: Difficulty,
     language: Language,
+    numbers: bool,
     ttype: TestType,
 
     state: OptMenu,
@@ -94,11 +96,14 @@ pub struct DBdata {
     pub wpm: f64,
 }
 
+// Opts struct but every element is a String or bool so they can be saved
+// into the json file
 #[derive(Serialize, Deserialize)]
 struct Config {
     capitals: bool,
     difficulty: String,
     language: String,
+    numbers: bool,
     test_type: String,
 }
 
@@ -108,6 +113,7 @@ impl Opts {
             capitals: false,
             difficulty: Difficulty::Normal,
             language: Language::English,
+            numbers: false,
             ttype: TestType::Words25,
 
             state: OptMenu::Main,
@@ -158,16 +164,10 @@ impl DBdata {
 
 impl Tuipe {
     pub fn new() -> Self {
-        let mut opts_struct = Opts::new();
-        match load_configs() {
-            Ok((lang, ttype, diff, caps)) => {
-                opts_struct.language = lang;
-                opts_struct.ttype = ttype;
-                opts_struct.difficulty = diff;
-                opts_struct.capitals = caps
-            }
-            Err(_) => {}
-        }
+        let opts_struct = match load_configs() {
+            Ok(loaded_opts) => loaded_opts,
+            Err(_) => Opts::new(),
+        };
         Self {
             save_success: Ok(()),
             // This is a weird way to do this but it should work fine,
@@ -213,7 +213,7 @@ impl Tuipe {
 
         self.character_index = 0;
         self.word_index = 0;
-        self.words = get_words_as_vector(&self.opts.language, &self.opts.ttype, self.opts.capitals);
+        self.words = get_words_as_vector(&self.opts);
     }
 
     // Checks whether the test is over, by either the time being up in a timed
@@ -335,12 +335,7 @@ impl Tuipe {
                 }
             }
             if self.should_exit {
-                save_configs(
-                    self.opts.language,
-                    self.opts.ttype,
-                    self.opts.difficulty,
-                    self.opts.capitals,
-                )?;
+                save_configs(self.opts)?;
                 log::info!("Application stopped");
                 return Ok(());
             }
@@ -350,7 +345,7 @@ impl Tuipe {
 
 // Returns a vector containing the words for the typing test
 // Takes the test language and the test type as parameters
-fn get_words_as_vector(language: &Language, test_type: &TestType, capitals: bool) -> Vec<String> {
+fn get_words_as_vector(opts: &Opts) -> Vec<String> {
     // Get directory for word files at compile time from the DATADIR argument,
     // or use /usr/share/tuipe as default fallback
     const DATADIR: &str = match option_env!("DATADIR") {
@@ -358,8 +353,8 @@ fn get_words_as_vector(language: &Language, test_type: &TestType, capitals: bool
         None => "/usr/share/tuipe",
     };
 
-    let count = TestType::word_count(&test_type);
-    let wordfile = match language {
+    let count = TestType::word_count(&opts.ttype);
+    let wordfile = match opts.language {
         Language::English => DATADIR.to_string() + "/languages/english.json",
         Language::English1k => DATADIR.to_string() + "/languages/english_1k.json",
         Language::English5k => DATADIR.to_string() + "/languages/english_5k.json",
@@ -376,25 +371,46 @@ fn get_words_as_vector(language: &Language, test_type: &TestType, capitals: bool
     let mut rng = rng();
     let mut prev_word = String::from("");
     let mut i = 0;
+
+    // Take capitals as an extra bool so when given a word that is numbers
+    // it doesnt try to do weird stuff with them, just adds them to the vector
+    // (thanks borrow checker)
+    let mut add_word = |mut word: String, capitals: bool| {
+        if capitals {
+            let mut char_rng = rand::rng();
+            word = word
+                .chars()
+                .map(|c| {
+                    if char_rng.random_bool(0.25) {
+                        c.to_ascii_uppercase()
+                    } else {
+                        c
+                    }
+                })
+                .collect();
+            words.push(word);
+        } else {
+            words.push(word);
+        }
+    };
+
     while i < count {
         if let Some(word) = word_vector.choose(&mut rng) {
-            let mut new_word = word.to_lowercase();
+            let new_word = word.to_lowercase();
             if new_word != prev_word {
-                if capitals {
-                    let mut char_rng = rand::rng();
-                    new_word = new_word
-                        .chars()
-                        .map(|c| {
-                            if char_rng.random_bool(0.25) {
-                                c.to_ascii_uppercase()
-                            } else {
-                                c
-                            }
-                        })
-                        .collect();
-                    words.push(new_word.clone());
+                if opts.numbers {
+                    let mut num_rng = rand::rng();
+                    if num_rng.random_bool(0.10) {
+                        let num_count = new_word.len();
+                        let number_string: String = (0..num_count)
+                            .map(|_| num_rng.random_range(0..10).to_string())
+                            .collect();
+                        add_word(number_string, false)
+                    } else {
+                        add_word(new_word.clone(), opts.capitals)
+                    }
                 } else {
-                    words.push(new_word.clone());
+                    add_word(new_word.clone(), opts.capitals);
                 }
                 prev_word = new_word;
                 i += 1;
@@ -440,7 +456,7 @@ fn config_file_exists() -> Result<()> {
 // Function to read the config json file.
 // Either returns an error, the read values or default values if the read
 // values are something unexpected
-fn load_configs() -> Result<(Language, TestType, Difficulty, bool)> {
+fn load_configs() -> Result<Opts> {
     // Check if the config file exists
     config_file_exists()?;
 
@@ -448,37 +464,46 @@ fn load_configs() -> Result<(Language, TestType, Difficulty, bool)> {
     let config: Config = serde_json::from_str(&json)?;
 
     log::info!(
-        "Loaded configs: language:{}, type:{}, difficulty:{}, capitals:{}",
+        "Loaded configs: language:{}, type:{}, difficulty:{}, capitals:{}, numbers:{}",
         config.language,
         config.test_type,
         config.difficulty,
-        config.capitals
+        config.capitals,
+        config.numbers
     );
 
-    Ok((
-        Language::from_string(config.language.as_str()),
-        TestType::from_string(config.test_type.as_str()),
-        Difficulty::from_string(config.difficulty.as_str()),
-        config.capitals,
-    ))
+    Ok(Opts {
+        capitals: config.capitals,
+        difficulty: Difficulty::from_string(config.difficulty.as_str()),
+        language: Language::from_string(config.language.as_str()),
+        numbers: config.numbers,
+        ttype: TestType::from_string(config.test_type.as_str()),
+
+        state: OptMenu::Main,
+    })
 }
 
-fn save_configs(lang: Language, ttype: TestType, diff: Difficulty, capitals: bool) -> Result<()> {
+// Function to save the user's options to a json file, Takes the Opts struct
+// that has the values to be saved as an argument
+// Either returns nothing, or an error if one occurred
+fn save_configs(conf: Opts) -> Result<()> {
     let config = Config {
-        language: String::from(Language::as_string(&lang)),
-        test_type: String::from(TestType::as_string(&ttype)),
-        difficulty: String::from(Difficulty::as_string(&diff)),
-        capitals: capitals,
+        language: String::from(Language::as_string(&conf.language)),
+        test_type: String::from(TestType::as_string(&conf.ttype)),
+        difficulty: String::from(Difficulty::as_string(&conf.difficulty)),
+        numbers: conf.numbers,
+        capitals: conf.capitals,
     };
     let json = serde_json::to_string_pretty(&config)?;
     std::fs::write(config_path()?, json)?;
 
     log::info!(
-        "Saved configs: language:{}, type:{}, difficulty:{}, capitals:{}",
+        "Saved configs: language:{}, type:{}, difficulty:{}, capitals:{}, numbers: {}",
         config.language,
         config.test_type,
         config.difficulty,
-        config.capitals
+        config.capitals,
+        config.numbers
     );
 
     Ok(())
