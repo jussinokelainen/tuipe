@@ -56,6 +56,7 @@ fn fix_database() -> Result<()> {
                 ("test_type", "TEXT"),
                 ("language", "TEXT"),
                 ("capital_letters", "BOOLEAN"),
+                ("numbers", "BOOLEAN"),
                 ("characters_typed", "INTEGER"),
                 ("time", "INTEGER"),
             ];

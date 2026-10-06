@@ -536,6 +536,7 @@ fn database_exists() -> bool {
                 test_type TEXT,
                 language TEXT,
                 capital_letters BOOLEAN,
+                numbers BOOLEAN,
                 characters_typed INTEGER,
                 time INTEGER
             );";
