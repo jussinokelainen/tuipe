@@ -52,7 +52,7 @@ impl Tuipe {
 
     // Rendering
     pub fn render_main_menu(&mut self, frame: &mut Frame) {
-        let input_area = self.create_layout(40, 18, frame);
+        let input_area = self.create_layout(40, 19, frame);
 
         let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
@@ -82,6 +82,11 @@ impl Tuipe {
         let capitals = self.opts.capitals;
         lines.push(Line::from(Span::styled(
             format!("Capital letters: {capitals}"),
+            Style::default().fg(Color::LightCyan),
+        )));
+        let numbers = self.opts.numbers;
+        lines.push(Line::from(Span::styled(
+            format!("Include numbers: {numbers}"),
             Style::default().fg(Color::LightCyan),
         )));
         lines.push(Line::from(Span::raw("")));
