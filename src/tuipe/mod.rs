@@ -6,6 +6,7 @@ mod opt_difficulty;
 mod opt_language;
 mod opt_main;
 mod opt_numbers;
+mod opt_symbols;
 mod opt_testtype;
 mod test_over;
 mod test_running;
@@ -62,6 +63,7 @@ struct Opts {
     difficulty: Difficulty,
     language: Language,
     numbers: bool,
+    symbols: bool,
     ttype: TestType,
 
     state: OptMenu,
@@ -104,6 +106,7 @@ struct Config {
     difficulty: String,
     language: String,
     numbers: bool,
+    symbols: bool,
     test_type: String,
 }
 
@@ -114,6 +117,7 @@ impl Opts {
             difficulty: Difficulty::Normal,
             language: Language::English,
             numbers: false,
+            symbols: false,
             ttype: TestType::Words25,
 
             state: OptMenu::Main,
@@ -362,6 +366,11 @@ fn get_words_as_vector(opts: &Opts) -> Vec<String> {
         Language::English25k => DATADIR.to_string() + "/languages/english_25k.json",
     };
 
+    let symbols = [
+        "!", "\"", "#", "¤", "%", "&", "/", "(", ")", "=", "?", "@", "£", "$", "‰", "€", "'", "*",
+        "<", ">", "|", "{", "[", "]", "}", ",", ".", "-", ";", ":", "_",
+    ];
+
     let data = fs::read_to_string(&wordfile).expect("Failed to read file");
     let word_vector: Vec<String> = serde_json::from_str(&data).expect("Failed to parse JSON");
 
@@ -398,19 +407,25 @@ fn get_words_as_vector(opts: &Opts) -> Vec<String> {
         if let Some(word) = word_vector.choose(&mut rng) {
             let new_word = word.to_lowercase();
             if new_word != prev_word {
-                if opts.numbers {
-                    let mut num_rng = rand::rng();
-                    if num_rng.random_bool(0.10) {
-                        let num_count = new_word.len();
-                        let number_string: String = (0..num_count)
-                            .map(|_| num_rng.random_range(0..10).to_string())
-                            .collect();
-                        add_word(number_string, false)
-                    } else {
-                        add_word(new_word.clone(), opts.capitals)
-                    }
+                if opts.numbers && rng.random_bool(0.10) {
+                    let num_count = new_word.len();
+                    let number_string: String = (0..num_count)
+                        .map(|_| rng.random_range(0..10).to_string())
+                        .collect();
+                    add_word(number_string, false)
+                } else if opts.symbols && rng.random_bool(0.10) {
+                    let sym_count = new_word.len();
+                    let symbol_string: String = (0..sym_count)
+                        .map(|_| {
+                            symbols
+                                .choose(&mut rng)
+                                .expect("couldn't get symbol")
+                                .to_string()
+                        })
+                        .collect();
+                    add_word(symbol_string, false)
                 } else {
-                    add_word(new_word.clone(), opts.capitals);
+                    add_word(new_word.clone(), opts.capitals)
                 }
                 prev_word = new_word;
                 i += 1;
@@ -477,6 +492,7 @@ fn load_configs() -> Result<Opts> {
         difficulty: Difficulty::from_string(config.difficulty.as_str()),
         language: Language::from_string(config.language.as_str()),
         numbers: config.numbers,
+        symbols: config.symbols,
         ttype: TestType::from_string(config.test_type.as_str()),
 
         state: OptMenu::Main,
@@ -492,6 +508,7 @@ fn save_configs(conf: Opts) -> Result<()> {
         test_type: String::from(TestType::as_string(&conf.ttype)),
         difficulty: String::from(Difficulty::as_string(&conf.difficulty)),
         numbers: conf.numbers,
+        symbols: conf.symbols,
         capitals: conf.capitals,
     };
     let json = serde_json::to_string_pretty(&config)?;

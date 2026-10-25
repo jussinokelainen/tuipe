@@ -12,11 +12,12 @@ pub enum OptMenu {
     Language,
     Main,
     Numbers,
+    Symbols,
     TestType,
 }
 
 impl OptMenu {
-    pub const COUNT: usize = 5;
+    pub const COUNT: usize = 6;
 
     pub fn from_index(index: usize) -> Self {
         match index {
@@ -25,6 +26,7 @@ impl OptMenu {
             2 => OptMenu::Language,
             3 => OptMenu::Capitals,
             4 => OptMenu::Numbers,
+            5 => OptMenu::Symbols,
             _ => OptMenu::TestType,
         }
     }
@@ -57,6 +59,7 @@ impl Tuipe {
             OptMenu::Main => self.input_opt_main(keycode),
             OptMenu::Numbers => self.input_opt_numbers(keycode),
             OptMenu::TestType => self.input_opt_testtype(keycode),
+            OptMenu::Symbols => self.input_opt_symbols(keycode),
         }
     }
 
@@ -79,7 +82,15 @@ impl Tuipe {
         let lang_line = format!("Language: {}", Language::as_string(&self.opts.language));
         let capital_line = format!("Capital letters: {}", self.opts.capitals);
         let numbers_line = format!("Include numbers: {}", self.opts.numbers);
-        let options = [ttype_line, diff_line, lang_line, capital_line, numbers_line];
+        let symbols_line = format!("Include symbols: {}", self.opts.symbols);
+        let options = [
+            ttype_line,
+            diff_line,
+            lang_line,
+            capital_line,
+            numbers_line,
+            symbols_line,
+        ];
         for (i, name) in options.iter().enumerate() {
             let style = if i == self.menu_selection {
                 Style::default().fg(Color::Blue)
@@ -111,6 +122,7 @@ impl Tuipe {
             OptMenu::Main => self.render_opt_main(frame),
             OptMenu::Numbers => self.render_opt_numbers(frame),
             OptMenu::TestType => self.render_opt_testtype(frame),
+            OptMenu::Symbols => self.render_opt_symbols(frame),
         }
     }
 }

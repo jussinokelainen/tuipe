@@ -52,7 +52,7 @@ impl Tuipe {
 
     // Rendering
     pub fn render_main_menu(&mut self, frame: &mut Frame) {
-        let input_area = self.create_layout(40, 19, frame);
+        let input_area = self.create_layout(40, 20, frame);
 
         let mut lines: Vec<Line<'_>> = Vec::new();
         lines.push(Line::from(Span::styled(
@@ -87,6 +87,11 @@ impl Tuipe {
         let numbers = self.opts.numbers;
         lines.push(Line::from(Span::styled(
             format!("Include numbers: {numbers}"),
+            Style::default().fg(Color::LightCyan),
+        )));
+        let symbols = self.opts.symbols;
+        lines.push(Line::from(Span::styled(
+            format!("Include symbols: {symbols}"),
             Style::default().fg(Color::LightCyan),
         )));
         lines.push(Line::from(Span::raw("")));
