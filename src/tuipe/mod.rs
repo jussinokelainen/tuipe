@@ -554,6 +554,7 @@ fn database_exists() -> bool {
                 language TEXT,
                 capital_letters BOOLEAN,
                 numbers BOOLEAN,
+                symbols BOOLEAN,
                 characters_typed INTEGER,
                 time INTEGER
             );";

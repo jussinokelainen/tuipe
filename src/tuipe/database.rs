@@ -16,8 +16,8 @@ impl Tuipe {
         let sql_statement = format!(
             "
             INSERT INTO
-                results(wpm, raw_wpm, accuracy, test_type, language, capital_letters, numbers, characters_typed, time)
-                VALUES ({}, {}, {}, '{}', '{}', {}, {}, {}, {});",
+                results(wpm, raw_wpm, accuracy, test_type, language, capital_letters, numbers, symbols, characters_typed, time)
+                VALUES ({}, {}, {}, '{}', '{}', {}, {}, {}, {}, {});",
             self.stats.wpm,
             self.stats.wpm_raw,
             self.stats.accuracy,
@@ -25,6 +25,7 @@ impl Tuipe {
             Language::as_string(&self.opts.language),
             self.opts.capitals,
             self.opts.numbers,
+            self.opts.symbols,
             self.stats.typed_characters,
             self.stats.time
         );
