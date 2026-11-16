@@ -41,7 +41,10 @@ impl Tuipe {
             KeyCode::Char('j') => {
                 self.menu_selection = (self.menu_selection + 1) % OptMenu::COUNT;
             }
-            KeyCode::Esc => self.state = State::MainMenu,
+            KeyCode::Esc => {
+                self.state = State::MainMenu;
+                self.menu_selection = 0
+            }
             KeyCode::Enter => {
                 let state = OptMenu::from_index(self.menu_selection);
                 match state {
