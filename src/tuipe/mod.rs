@@ -230,10 +230,10 @@ impl Tuipe {
             if words_len < self.input.len() {
                 return true;
             }
-            if words_len == self.input.len() {
-                if self.words[words_len - 1] == self.input[words_len - 1] {
-                    return true;
-                }
+            if words_len == self.input.len()
+                && self.words[words_len - 1] == self.input[words_len - 1]
+            {
+                return true;
             }
         }
 
@@ -371,7 +371,7 @@ fn get_words_as_vector(opts: &Opts) -> Vec<String> {
     let data = fs::read_to_string(&wordfile).expect("Failed to read file");
     let word_vector: Vec<String> = serde_json::from_str(&data).expect("Failed to parse JSON");
 
-    log::info!("Read wordfile: {}", &wordfile);
+    log::info!("Read wordfile: {}", wordfile);
 
     let mut words = Vec::new();
     let mut rng = rng();
@@ -559,7 +559,7 @@ fn database_exists() -> bool {
     match connection {
         Some(connection) => {
             let res = connection.execute(table_create_query);
-            if res.is_ok() { true } else { false }
+            res.is_ok()
         }
         None => false,
     }

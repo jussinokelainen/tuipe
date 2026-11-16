@@ -9,7 +9,7 @@ impl Tuipe {
         let (db_path, success) = db_path();
         if !success {
             return Err(sqlite::Error {
-                code: Some(1 as isize),
+                code: Some(1_isize),
                 message: Some(String::from("getting db path unsuccessful")),
             });
         }
@@ -54,7 +54,7 @@ impl Tuipe {
         let (db_path, success) = db_path();
         if !success {
             return Err(sqlite::Error {
-                code: Some(1 as isize),
+                code: Some(1_isize),
                 message: Some(String::from("getting db path unsuccessful")),
             });
         }
@@ -73,21 +73,16 @@ impl Tuipe {
         let connection = sqlite::open(db_path)?;
         let mut out_vec = Vec::new();
         let mut statement = connection.prepare(sql_statement)?;
-        loop {
-            match statement.next()? {
-                State::Row => {
-                    let mut data = DBdata::new();
-                    data.wpm = statement.read::<f64, _>("wpm")?;
-                    data.raw_wpm = statement.read::<f64, _>("raw_wpm")?;
-                    data.accuracy = statement.read::<f64, _>("accuracy")?;
-                    data.test_type = statement.read::<String, _>("test_type")?;
-                    data.language = statement.read::<String, _>("language")?;
-                    data.characters_typed = statement.read::<i64, _>("characters_typed")? as u16;
-                    data.time = statement.read::<i64, _>("time")? as u128;
-                    out_vec.push(data);
-                }
-                State::Done => break,
-            }
+        while let State::Row = statement.next()? {
+            let mut data = DBdata::new();
+            data.wpm = statement.read::<f64, _>("wpm")?;
+            data.raw_wpm = statement.read::<f64, _>("raw_wpm")?;
+            data.accuracy = statement.read::<f64, _>("accuracy")?;
+            data.test_type = statement.read::<String, _>("test_type")?;
+            data.language = statement.read::<String, _>("language")?;
+            data.characters_typed = statement.read::<i64, _>("characters_typed")? as u16;
+            data.time = statement.read::<i64, _>("time")? as u128;
+            out_vec.push(data);
         }
 
         Ok(out_vec)

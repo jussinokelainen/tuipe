@@ -101,7 +101,7 @@ impl Tuipe {
             let label = if i == self.menu_selection {
                 format!("> {name}")
             } else {
-                format!("{name}")
+                name.to_string()
             };
             lines.push(Line::from(Span::styled(label, style)));
         }

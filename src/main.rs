@@ -109,12 +109,14 @@ fn main() -> Result<()> {
     )?;
 
     let valid_flags = flagger::Flagset {
-        flags: vec!["fix-database", "help", "h"],
-        value_flags: Vec::new(),
-        opt_flags: Vec::new(),
+        flags: Some(vec!["fix-database", "help", "h"]),
+        value_flags: None,
+        opt_flags: None,
     };
     let parsed_args = flagger::parse_args(valid_flags, None)?;
-    for flag in parsed_args.flags {
+    if let Some(flags) = parsed_args.flags
+        && let Some(flag) = flags.into_iter().next()
+    {
         match flag.as_str() {
             "fix-database" => {
                 log::info!("Checking database for missing or incorrect columns");

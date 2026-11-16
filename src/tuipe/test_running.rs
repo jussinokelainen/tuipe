@@ -159,8 +159,8 @@ impl Tuipe {
         }
         // Remove one since there is no space after the last word
         correct_characters -= 1;
-        let correct_words = correct_characters as f64 / 5 as f64;
-        let raw_words = (correct_characters + raw_extra_chars) as f64 / 5 as f64;
+        let correct_words = correct_characters as f64 / 5.0;
+        let raw_words = (correct_characters + raw_extra_chars) as f64 / 5.0;
 
         // times 60 to get words per minute instead of words per second,
         // and divide self.test_final_time by 1000 to convert it from
@@ -283,7 +283,6 @@ impl Tuipe {
             .block(Block::new());
         frame.render_widget(input, input_area);
 
-        #[expect(clippy::cast_possible_truncation)]
         frame.set_cursor_position(Position::new(
             input_area.x + 1 + center_offset + cursor_col,
             input_area.y + cursor_row,
