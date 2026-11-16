@@ -43,8 +43,16 @@ impl Tuipe {
             }
             KeyCode::Esc => self.state = State::MainMenu,
             KeyCode::Enter => {
-                self.opts.state = OptMenu::from_index(self.menu_selection);
-                self.menu_selection = 0;
+                let state = OptMenu::from_index(self.menu_selection);
+                match state {
+                    OptMenu::Capitals => self.opts.capitals = !self.opts.capitals,
+                    OptMenu::Symbols => self.opts.symbols = !self.opts.symbols,
+                    OptMenu::Numbers => self.opts.numbers = !self.opts.numbers,
+                    _ => {
+                        self.opts.state = state;
+                        self.menu_selection = 0;
+                    }
+                }
             }
             KeyCode::Char('q') => self.should_exit = true,
             _ => {}
@@ -53,13 +61,10 @@ impl Tuipe {
 
     pub fn opt_menu_controls(&mut self, keycode: crossterm::event::KeyCode) {
         match self.opts.state {
-            OptMenu::Capitals => self.input_opt_capitals(keycode),
             OptMenu::Difficulty => self.input_opt_difficulty(keycode),
             OptMenu::Language => self.input_opt_language(keycode),
-            OptMenu::Main => self.input_opt_main(keycode),
-            OptMenu::Numbers => self.input_opt_numbers(keycode),
             OptMenu::TestType => self.input_opt_testtype(keycode),
-            OptMenu::Symbols => self.input_opt_symbols(keycode),
+            _ => self.input_opt_main(keycode),
         }
     }
 
@@ -116,13 +121,13 @@ impl Tuipe {
 
     pub fn render_opt(&mut self, frame: &mut Frame) {
         match self.opts.state {
-            OptMenu::Capitals => self.render_opt_capitals(frame),
+            OptMenu::Capitals => self.render_opt_main(frame),
             OptMenu::Difficulty => self.render_opt_difficulty(frame),
             OptMenu::Language => self.render_opt_language(frame),
             OptMenu::Main => self.render_opt_main(frame),
-            OptMenu::Numbers => self.render_opt_numbers(frame),
+            OptMenu::Numbers => self.render_opt_main(frame),
             OptMenu::TestType => self.render_opt_testtype(frame),
-            OptMenu::Symbols => self.render_opt_symbols(frame),
+            OptMenu::Symbols => self.render_opt_main(frame),
         }
     }
 }

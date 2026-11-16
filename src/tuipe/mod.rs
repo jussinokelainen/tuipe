@@ -1,12 +1,9 @@
 mod database;
 mod menu_main;
 mod menu_stats;
-mod opt_capitalization;
 mod opt_difficulty;
 mod opt_language;
 mod opt_main;
-mod opt_numbers;
-mod opt_symbols;
 mod opt_testtype;
 mod test_over;
 mod test_running;
